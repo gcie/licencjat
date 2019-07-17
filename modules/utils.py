@@ -1,9 +1,7 @@
 import torch
-import numpy
+import numpy as np
 
 
-def categorical(probs, num_samples=1, replacement=True):
+def categorical(probs, num_samples=1):
     """Sample indices of probs with specified probabilities."""
-    probs_norm = probs.flatten() / probs.sum()
-    samples = torch.multinomial(probs_norm, num_samples, replacement).tolist()
-    return numpy.asarray([numpy.unravel_index(x, probs.shape) for x in samples])
+    return np.asarray([probs.sample(np.random.rand()) for _ in range(num_samples)])

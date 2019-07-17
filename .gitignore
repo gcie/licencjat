@@ -1,4 +1,9 @@
+# IDE
 .vscode/
+
+# datasets
 MNIST/
 dataset/
+
+# python
 __pycache__
