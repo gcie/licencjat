@@ -27,7 +27,7 @@ class Ngram(defaultdict):
     def parameters(self):
         for idx in self:
             yield self[idx]
-    
+
     def show(self):
         for idx in self:
             print(idx, self[idx])
@@ -43,6 +43,6 @@ class Ngram(defaultdict):
         warnings.warn("Ngram ravel is deprecated, use get(0) instead")
         for idx in self:
             return self[idx]
-    
+
     def size(self):
         return len(self)

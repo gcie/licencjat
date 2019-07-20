@@ -10,16 +10,19 @@ from torchvision import datasets, transforms
 from modules.utils import categorical
 from modules.ngram import Ngram
 
-def dump_data_to_local(content, fname=None): 
-    if fname is None: 
+
+def dump_data_to_local(content, fname=None):
+    if fname is None:
         fname = strftime("%Y-%m-%d %H:%M:%S", gmtime()) + '.pkl'
     output = open(fname, 'wb+')
     pickle.dump(content, output)
     output.close()
     return fname
 
+
 def read_data_from_local(fname):
     return pickle.load(open(fname, "rb"))
+
 
 class SequentialMNIST(torch.utils.data.Dataset):
     """Create dataset containing sequences of MNIST digits based on given ngram probabilities"""
@@ -50,25 +53,28 @@ class SequentialMNIST(torch.utils.data.Dataset):
     def __getitem__(self, index):
         return self.data[index], self.targets[index]
 
+
 def sequence_loader_MNIST(batch_size, ngram, num_samples):
     data = SequentialMNIST(ngram, num_samples)
     return torch.utils.data.DataLoader(data, batch_size=batch_size, shuffle=True)
 
+
 def train_loader_MNIST(batch_size):
-    data = datasets.MNIST('./MNIST', train=True, download=True, transform=transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,)),]))
+    data = datasets.MNIST('./MNIST', train=True, download=True,
+                          transform=transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,)), ]))
     return torch.utils.data.DataLoader(data, batch_size=batch_size, shuffle=True)
 
+
 def test_loader_MNIST(batch_size):
-    data = datasets.MNIST('./MNIST', train=False, download=True, transform=transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,)),]))
+    data = datasets.MNIST('./MNIST', train=False, download=True,
+                          transform=transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,)), ]))
     return torch.utils.data.DataLoader(data, batch_size=batch_size, shuffle=False)
+
 
 def sequential_MNIST(num_samples, sequence_length, load=True, save=True, path="./dataset"):
     """Create sequences of digits from MNIST dataset."""
     data = datasets.MNIST('./MNIST', train=True, download=True,
-            transform=transforms.Compose([
-                transforms.ToTensor(),
-                transforms.Normalize((0.1307,), (0.3081,))
-                ]))
+                          transform=transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))]))
     data_path = path + "/data_" + str(sequence_length) + "_" + str(num_samples) + ".npy"
     label_path = path + "/labels_" + str(sequence_length) + "_" + str(num_samples) + ".npy"
     if load and os.path.exists(data_path) and os.path.exists(label_path):
