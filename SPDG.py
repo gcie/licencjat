@@ -1,26 +1,50 @@
-#%% [markdown]
+# %% [markdown]
 # ## Sformułowanie problemu
-# 
-# Rozważamy problem uczenia klasyfikatora danych sekwencyjnych, który ciągowi 
-# $ (x_1,\dots x_{T_0}) $ przyporządkowuje ciąg $(y_1,\dots y_{T_0})$, ale bez dostępu do podpisanego zbioru treningowego $\mathcal{D}_{XY} = \lbrace(x_1^n, \dots, x_{T_n}^n), (y_1^n, \dots,y_{T_n}^n) \ : \ n=1,\dots, M \rbrace $ (tutaj $T_n$ oznacza długość $n$-tego ciągu), a jedynie do:
+#
+# Rozważamy problem uczenia klasyfikatora danych sekwencyjnych, który ciągowi
+# $ (x_1,\dots x_{T_0}) $ przyporządkowuje ciąg $(y_1,\dots y_{T_0})$, ale bez dostępu
+# do podpisanego zbioru treningowego $\mathcal{D}_{XY} = \lbrace(x_1^n, \dots, x_{T_n}^n),
+# (y_1^n, \dots,y_{T_n}^n) \ : \ n=1,\dots, M \rbrace $ (tutaj $T_n$ oznacza długość $n$-tego ciągu), a jedynie do:
 # * zbioru niepodpisanych danych: $\mathcal{D}_X = \lbrace(x_1^n, \dots, x_{T_n}^n)\ : \ n=1,\dots, M \rbrace$,
 # * modelu n-gram: $p_{LM}(i_1,\dots ,i_N) = p_{LM}(y_{t-N+1}^n=i_1, \dots, y_t^n=i^N)$,
-# 
+#
 # gdzie $i_1, \dots, i_N$ są elementami sekwencji (np. słowami/literami), a subskrypt $LM$ oznacza model językowy (*Language Model*).
 
-#%%
+# %% IMPORTS, MODELS AND UTILITY FUNCTIONS
 import torch
 from torch import nn
 import numpy as np
 import time
-# import httpimport
-# with httpimport.github_repo('janchorowski', 'nn_assignments', 
-#                             module='common', branch='nn18'):
-#     from common.plotting import plot_mat
+import matplotlib.pyplot as plt
+import matplotlib as mpl
+from scipy import signal
 from modules.data_processing import Ngram, train_loader_MNIST, test_loader_MNIST, sequence_loader_MNIST
-from modules.data_visualization import *
 
 device = 'cuda'
+
+
+def get_statistics(model, output_size=10):
+    model.eval()
+    num_errs = 0.0
+    num_examples = 0
+    results = np.zeros((10, output_size), dtype='int32')
+    with torch.no_grad():
+        for x, y in test_loader:
+            # x = x.to(device).view(-1, 1, 28, 28).float()
+            x = x.to(device).view(-1, 28*28).float()
+            y = y.to(device)
+            outputs = model.forward(x)
+            _, predictions = outputs.data.max(dim=1)
+            for i in range(10):
+                x_ = predictions[y.data == i].cpu().numpy()
+                x_unique, x_unique_count = np.unique(x_, return_counts=True)
+                # x_unique_count = torch.stack([(x_ == x_u).sum() for x_u in x_unique])
+                for idx, occ in zip(x_unique, x_unique_count):
+                    results[i, idx] += occ
+            num_errs += (predictions != y.data).sum().item()
+            num_examples += x.size(0)
+    model.train()
+    return results
 
 
 class Model(nn.Module):
@@ -143,7 +167,11 @@ def SGD(model, optimizer, data_loader, test_loader, num_epochs=5, log_every=1, t
 
 
 def SPDG(model, optimizer_primal, optimizer_dual, data_loader, test_loader, num_epochs=5, log_every=1, test_every=1,
-         history=dict(err_rate=[], ploss=[], loss=[], test_err_rate=[], dual=[])):
+         history=None):
+    if history is None:
+        history = dict(err_rate=[], ploss=[], loss=[], test_err_rate=[], dual=[], predictions=[])
+        for idx in model.dual:
+            history['dual ' + str(idx)] = []
     model.train()
     iter_ = 0
     epoch_ = 0
@@ -151,15 +179,15 @@ def SPDG(model, optimizer_primal, optimizer_dual, data_loader, test_loader, num_
         while epoch_ < num_epochs:
             if epoch_ % test_every == 0:
                 msg = "Minibatch |   p-loss   |    loss    | err rate | steps/s |"
-                for i in range(len(model.dual)):
-                    msg += " dual {} |".format(i)
+                for i in model.dual:
+                    msg += " {} |".format(i)
                 print(msg)
             epoch_ += 1
             stime = time.time()
             siter = iter_
             for x, y in data_loader:
                 iter_ += 1
-                x = x.cuda().view(batch_size, -1, 28*28).float()
+                x = x.cuda().view(-1, model.ngram.n, 28*28).float()
                 y = y.cuda()
                 out = model.forward_sequences(x)
                 ploss = model.loss_primal(out, y)
@@ -184,18 +212,20 @@ def SPDG(model, optimizer_primal, optimizer_dual, data_loader, test_loader, num_
                 history['err_rate'].append(err_rate)
                 history['ploss'].append(ploss_)
                 history['loss'].append(loss_)
-                history['dual'].append(model.dual.get(0))
+                for idx in model.dual:
+                    history['dual ' + str(idx)].append(model.dual[idx])
 
                 if iter_ % log_every == 0:
                     num_iter = iter_ - siter
                     msg = "{:>8}  | {:>10.2e} | {:>10.2e} | {:>7.2f}% | {:>7.2f} |".format(iter_, ploss_, loss_, err_rate,
                                                                                            num_iter / (time.time() - stime))
                     for idx in model.dual:
-                        msg += " {:>6.2f} |".format(model.dual[idx])
+                        msg += " {:>8.2f}  |".format(model.dual[idx])
                     print(msg)
                     siter = iter_
                     stime = time.time()
             if epoch_ % test_every == 0:
+                history['predictions'].append(get_statistics(model))
                 test_err_rate = model.compute_error_rate(test_loader)
                 history['test_err_rate'].append(test_err_rate)
                 msg = "Epoch {:>10} | Test error rate: {:.2f}".format(epoch_, test_err_rate)
@@ -205,85 +235,92 @@ def SPDG(model, optimizer_primal, optimizer_dual, data_loader, test_loader, num_
     return history
 
 
-#%%
-from modules.data_processing import *
-from modules.data_visualization import *
-
+# %% GENERATING DATASET
 n = 3
 ngram = Ngram(n)  # create_ngram(np.array([[0, 1, 2]]), n)
 # ngram[(0, 1, 2, 3, 4, 5, 6, 7, 8, 9)] = 1.
-ngram[(0, 1, 2)] = 10.
-ngram[(1, 2, 3)] = 6.
-ngram[(2, 3, 4)] = 3.
-ngram[(3, 4, 5)] = 1.
+ngram[(0, 1, 2)] = 11.
+ngram[(1, 2, 3)] = 3.
+ngram[(4, 5, 6)] = 1.
+ngram[(5, 6, 7)] = 1.
+ngram[(6, 7, 8)] = 1.
+ngram[(7, 8, 9)] = 1.
+ngram[(8, 9, 0)] = 1.
+ngram[(9, 0, 1)] = 1.
+# ngram[(1, 3, 5)] = 0.
+# ngram[(5, 7, 9)] = 0.
+# ngram[(9, 5, 1)] = 0.
 ngram.norm()
 
-batch_size = 100
+batch_size = 128
 data_loader = train_loader_MNIST(batch_size)
 test_loader = test_loader_MNIST(batch_size)
 sequence_loader = sequence_loader_MNIST(batch_size, ngram, num_samples=20000)
 
-#%% Normalny trening
+# %% REGULAR TRAINING (SGD)
 model = Model(ngram)
 model.cuda()
 model.init_weights()
 
 optimizer = torch.optim.Adam(model.primal.parameters())
-history = SGD(model, optimizer, data_loader, test_loader, num_epochs=3, log_every=10, test_every=1)
+history = SGD(model, optimizer, data_loader, test_loader, num_epochs=3, log_every=50, test_every=1)
 
-#%% Dualny trening
-model = Model(ngram, output_size=6)
+# %% DUAL TRAINING
+model = Model(ngram, output_size=10)
 model.cuda()
 model.init_weights()
 
-optimizer_primal = torch.optim.Adam(model.primal.parameters(), lr=1e-5)
-optimizer_dual = torch.optim.Adam(model.dual.parameters(), lr=1e-2)
+primal_lr = 1e-6
+dual_lr = 1e-2
+
+optimizer_primal = torch.optim.Adam(model.primal.parameters(), lr=primal_lr)
+optimizer_dual = torch.optim.Adam(model.dual.parameters(), lr=dual_lr)
 
 history = SPDG(model, optimizer_primal, optimizer_dual, sequence_loader,
-               test_loader, num_epochs=10, log_every=20, test_every=3)
+               test_loader, num_epochs=10, log_every=20, test_every=1)
 
 
-#%% Dualny trening (kontynuacja)
+# %% DUAL TRAINING (CONTINUATION)
 history = SPDG(model, optimizer_primal, optimizer_dual, sequence_loader,
-               test_loader, num_epochs=12, log_every=100, test_every=3, history=history)
+               test_loader, num_epochs=20, log_every=100, test_every=1, history=history)
 
 
+# %% DUAL TRAINING (CONTINUATION VERY LONG)
+history = SPDG(model, optimizer_primal, optimizer_dual, sequence_loader,
+               test_loader, num_epochs=1000, log_every=20, test_every=1, history=history)
 
-#%% Wykresy
-import matplotlib.pyplot as plt
-import matplotlib as mpl
+# %% PLOTTING
+
+xs = range(len(history['loss']))
+ys = signal.savgol_filter(history['loss'], 51, 7)
 
 mpl.rc('savefig', format='svg')
 mpl.rc('lines', linewidth=0.5)
 mpl.style.use('seaborn')
-plt.plot(range(len(history['loss'])), history['ploss'])
+plt.plot(xs, ys)
 plt.savefig("fig_3")
 
-#%% Obliczanie statystyk
-from collections import defaultdict
+# %% STATISTICS
+stats = history['predictions'][-1]
+print(stats)
+print("\nn | acc\n--+------")
+for i, x in zip(range(10), np.diag(stats) / stats.sum(axis=1) * 100.0):
+    print("{} | {:>5.2f}".format(i, x))
 
-def get_statistics(model):
-    model.eval()
-    num_errs = 0.0
-    num_examples = 0
-    results = np.zeros((10, 6), dtype='int32')
-    with torch.no_grad():
-        for x, y in test_loader:
-            # x = x.to(device).view(-1, 1, 28, 28).float()
-            x = x.to(device).view(-1, 28*28).float()
-            y = y.to(device)
-            outputs = model.forward(x)
-            _, predictions = outputs.data.max(dim=1)
-            for i in range(10):
-                x_ = predictions[y.data == i].cpu().numpy()
-                x_unique, x_unique_count = np.unique(x_, return_counts=True)
-                # x_unique_count = torch.stack([(x_ == x_u).sum() for x_u in x_unique])
-                for idx, occ in zip(x_unique, x_unique_count):
-                    results[i, idx] += occ
-            num_errs += (predictions != y.data).sum().item()
-            num_examples += x.size(0)
-    model.train()
-    return results
+# %% SAVE
+fname = 'example'
+comment = ''
 
-get_statistics(model)
-#%%
+np.save(fname + '_hist', history)
+np.save(fname + '_model', model)
+np.save(fname + '_ngram', ngram)
+
+with open(fname + '_doc', "w+") as doc:
+    doc.write("primal_lr: {}\ndual_lr: {}\nn: {}\n{}".format(primal_lr, dual_lr, ngram.n, comment))
+
+
+# %% RESTORE
+
+# TODO
+
+# %%
