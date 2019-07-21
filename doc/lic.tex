@@ -1,7 +1,8 @@
 % Opcje klasy 'iithesis' opisane sa w komentarzach w pliku klasy. Za ich pomoca
 % ustawia sie przede wszystkim jezyk i rodzaj (lic/inz/mgr) pracy, oraz czy na
 % drugiej stronie pracy ma byc skladany wzor oswiadczenia o autorskim wykonaniu.
-\documentclass[declaration,shortabstract]{iithesis}
+% \documentclass[declaration,shortabstract]{iithesis}
+\documentclass[shortabstract]{iithesis}
 
 \usepackage[utf8]{inputenc}
 
@@ -13,17 +14,20 @@
 % polecenia \fmlinebreak.
 \polishtitle    {Wymagający złamania wierszy\fmlinebreak tytuł pracy w~języku polskim}
 \englishtitle   {English title}
-\polishabstract {\ldots}
-\englishabstract{\ldots}
+\polishabstract {Poniższa praca sprawdza hipotezę, że można nauczyc sieć neuronową rozpoznawać tekst bez 
+korzystania z podpisanych próbek tekstu, a jedynie z rokładów prawdopodobieństw wystąpienia pewnych sekwencji
+liter (n-gramów) w danych uczących.}
+\englishabstract{Below thesis validates hypothesis whether it is possible to teach a neural network text
+recognition without labeled data, but using sequential output statistics (in form of n-grams) only.}
 % w pracach wielu autorow nazwiska mozna oddzielic poleceniem \and
-\author         {Maksymilian Debeściak}
+\author         {Grzegorz Ciesielski}
 % w przypadku kilku promotorow, lub koniecznosci podania ich afiliacji, linie
 % w ponizszym poleceniu mozna zlamac poleceniem \fmlinebreak
-\advisor        {dr Jan Kowalski}
+\advisor        {dr Jan Chorowski}
 %\date          {}                     % Data zlozenia pracy
 % Dane do oswiadczenia o autorskim wykonaniu
 %\transcriptnum {}                     % Numer indeksu
-%\advisorgen    {dr. Jana Kowalskiego} % Nazwisko promotora w dopelniaczu
+%\advisorgen    {dr. Jana Chorowskiego} % Nazwisko promotora w dopelniaczu
 %%%%%
 
 %%%%% WLASNE DODATKOWE PAKIETY
@@ -42,16 +46,17 @@
 
 \begin{document}
 
+
 %%%%% POCZĄTEK ZASADNICZEGO TEKSTU PRACY
 
 \chapter{Wprowadzenie}
 
-\ldots
+\chapter{Output Distribution Match}
 
 %%%%% BIBLIOGRAFIA
 
-%\begin{thebibliography}{1}
-%\bibitem{example} \ldots
-%\end{thebibliography}
+% \begin{thebibliography}{1}
+% \bibitem{example} test 
+% \end{thebibliography}
 
 \end{document}

@@ -1,0 +1,19 @@
+\babel@toc {english}{}
+\babel@toc {polish}{}
+\babel@toc {english}{}
+\babel@toc {polish}{}
+\babel@toc {english}{}
+\babel@toc {polish}{}
+\babel@toc {english}{}
+\babel@toc {polish}{}
+\babel@toc {polish}{}
+\babel@toc {polish}{}
+\babel@toc {polish}{}
+\babel@toc {english}{}
+\babel@toc {polish}{}
+\babel@toc {english}{}
+\babel@toc {polish}{}
+\babel@toc {english}{}
+\babel@toc {polish}{}
+\contentsline {chapter}{\numberline {1.}Wprowadzenie}{7}{chapter.1}% 
+\contentsline {chapter}{\numberline {2.}Output Distribution Match}{9}{chapter.2}% 
