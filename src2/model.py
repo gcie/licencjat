@@ -3,7 +3,7 @@ import torch
 from torch import nn
 
 from config import BATCH_SIZE, DEVICE
-from modules.data_processing import Ngram
+from src.data_processing import Ngram
 
 
 class Model(nn.Module):

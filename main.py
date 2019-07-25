@@ -4,9 +4,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 from scipy import signal
-from modules.data_processing import Ngram, train_loader_MNIST, test_loader_MNIST, sequence_loader_MNIST
+from src.data_processing import Ngram, train_loader_MNIST, test_loader_MNIST, sequence_loader_MNIST
 from src.model import Model
-from config.config import DEVICE
+from config import DEVICE
 from src.training import SGD, SPDG
 
 torch.manual_seed(413862)
@@ -29,7 +29,6 @@ ngram[(9, 0, 1)] = 1.
 # ngram[(9, 5, 1)] = 0.
 ngram.norm()
 
-BATCH_SIZE = 128
 data_loader = train_loader_MNIST()
 test_loader = test_loader_MNIST()
 sequence_loader = sequence_loader_MNIST(ngram, num_samples=20000)

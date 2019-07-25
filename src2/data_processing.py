@@ -7,8 +7,8 @@ from time import gmtime, strftime
 import torch
 import numpy as np
 from torchvision import datasets, transforms
-from modules.ngram import Ngram
-from config import BATCH_SIZE
+from src.ngram import Ngram
+from config import BATCH_SIZE, MNIST_LOC
 
 
 def categorical(probs, num_samples=1):
@@ -35,7 +35,7 @@ class SequentialMNIST(torch.utils.data.Dataset):
         if sequence_length is not None:
             warnings.warn("Variable sequence_length is unused. Sequence generated have \
                 length equal to n (from ngram)")
-        data = datasets.MNIST('./MNIST', train=True, download=True,
+        data = datasets.MNIST(MNIST_LOC, train=True, download=True,
                               transform=transforms.Compose([
                                   transforms.ToTensor(),
                                   transforms.Normalize((0.1307,), (0.3081,))
@@ -65,20 +65,20 @@ def sequence_loader_MNIST(ngram, num_samples):
 
 
 def train_loader_MNIST():
-    data = datasets.MNIST('./MNIST', train=True, download=True,
+    data = datasets.MNIST(MNIST_LOC, train=True, download=True,
                           transform=transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,)), ]))
     return torch.utils.data.DataLoader(data, batch_size=BATCH_SIZE, shuffle=True)
 
 
 def test_loader_MNIST():
-    data = datasets.MNIST('./MNIST', train=False, download=True,
+    data = datasets.MNIST(MNIST_LOC, train=False, download=True,
                           transform=transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,)), ]))
     return torch.utils.data.DataLoader(data, batch_size=BATCH_SIZE, shuffle=False)
 
 
 def sequential_MNIST(num_samples, sequence_length, load=True, save=True, path="./dataset"):
     """Create sequences of digits from MNIST dataset."""
-    data = datasets.MNIST('./MNIST', train=True, download=True,
+    data = datasets.MNIST(MNIST_LOC, train=True, download=True,
                           transform=transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))]))
     data_path = path + "/data_" + str(sequence_length) + "_" + str(num_samples) + ".npy"
     label_path = path + "/labels_" + str(sequence_length) + "_" + str(num_samples) + ".npy"

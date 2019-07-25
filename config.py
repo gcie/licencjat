@@ -1,2 +1,3 @@
 DEVICE = 'cpu'
 BATCH_SIZE = 128
+MNIST_LOC = './MNIST'

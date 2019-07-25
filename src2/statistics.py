@@ -2,7 +2,7 @@ import numpy as np
 import torch
 
 from config import DEVICE
-from data_processing import test_loader_MNIST
+from src.data_processing import test_loader_MNIST
 
 
 def get_statistics(model, output_size=10, test_loader=None):

@@ -1,6 +1,6 @@
 import time
 from config import DEVICE
-from src.modules.statistics import get_statistics
+from src.statistics import get_statistics
 
 
 def SGD(model, optimizer, data_loader, test_loader, num_epochs=5, log_every=1, test_every=1, c=10,
