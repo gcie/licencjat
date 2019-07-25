@@ -18,33 +18,9 @@ import time
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 from scipy import signal
-from modules.data_processing import Ngram, train_loader_MNIST, test_loader_MNIST, sequence_loader_MNIST
-
-device = 'cuda'
-
-
-def get_statistics(model, output_size=10):
-    model.eval()
-    num_errs = 0.0
-    num_examples = 0
-    results = np.zeros((10, output_size), dtype='int32')
-    with torch.no_grad():
-        for x, y in test_loader:
-            # x = x.to(device).view(-1, 1, 28, 28).float()
-            x = x.to(device).view(-1, 28*28).float()
-            y = y.to(device)
-            outputs = model.forward(x)
-            _, predictions = outputs.data.max(dim=1)
-            for i in range(10):
-                x_ = predictions[y.data == i].cpu().numpy()
-                x_unique, x_unique_count = np.unique(x_, return_counts=True)
-                # x_unique_count = torch.stack([(x_ == x_u).sum() for x_u in x_unique])
-                for idx, occ in zip(x_unique, x_unique_count):
-                    results[i, idx] += occ
-            num_errs += (predictions != y.data).sum().item()
-            num_examples += x.size(0)
-    model.train()
-    return results
+from src.modules.data_processing import Ngram, train_loader_MNIST, test_loader_MNIST, sequence_loader_MNIST
+from config import DEVICE, BATCH_SIZE
+from src.modules.statistics import get_statistics
 
 
 class Model(nn.Module):
@@ -62,13 +38,13 @@ class Model(nn.Module):
                 nn.Linear(300, 100),
                 nn.ReLU(),
                 nn.Linear(100, output_size)
-            ).to(device)
+            ).to(DEVICE)
         else:
-            self.primal = architecture.to(device)
+            self.primal = architecture.to(DEVICE)
         self.dual = Ngram(self.ngram.n)
         for idx in self.ngram:
-            self.dual[idx] = torch.tensor(0.).uniform_(-1, 0).to(device).requires_grad_()
-        self.cuda()
+            self.dual[idx] = torch.tensor(0.).uniform_(-1, 0).to(DEVICE).requires_grad_()
+        self.to(DEVICE)
         self.init_weights()
 
     def forward_sequences(self, x):
@@ -81,10 +57,10 @@ class Model(nn.Module):
         return torch.mean(-torch.log(torch.gather(output, 1, target.unsqueeze(1))))
 
     def loss_primal(self, output, target):
-        loss = torch.tensor(0, dtype=torch.float32).to(device)
+        loss = torch.tensor(0, dtype=torch.float32).to(DEVICE)
         for i in self.ngram:
             loss += torch.sum(output[:, np.arange(self.ngram.n), i].prod(dim=1) * self.dual[i] * self.ngram[i])
-        return loss / batch_size
+        return loss / BATCH_SIZE
 
     def loss_dual(self, output, target):
         loss = self.loss_primal(output, target)
@@ -95,7 +71,7 @@ class Model(nn.Module):
     def clamp_dual(self):
         for idx in self.dual:
             if self.dual[idx].item() < -1.:
-                self.dual[idx] = torch.clamp(self.dual[idx], -1., 0.).to(device).requires_grad_()
+                self.dual[idx] = torch.clamp(self.dual[idx], -1., 0.).to(DEVICE).requires_grad_()
 
     def init_weights(self):
         for name, param in self.named_parameters():
@@ -113,8 +89,8 @@ class Model(nn.Module):
         with torch.no_grad():
             for x, y in data_loader:
                 # x = x.to(device).view(-1, 1, 28, 28).float()
-                x = x.to(device).view(-1, 28*28).float()
-                y = y.to(device)
+                x = x.to(DEVICE).view(-1, 28*28).float()
+                y = y.to(DEVICE)
                 outputs = self.forward(x)
                 _, predictions = outputs.data.max(dim=1)
                 num_errs += (predictions != y.data).sum().item()
@@ -138,8 +114,8 @@ def SGD(model, optimizer, data_loader, test_loader, num_epochs=5, log_every=1, t
             for x, y in data_loader:
                 iter_ += 1
                 optimizer.zero_grad()
-                x = x.cuda().view(x.size(0), -1)
-                y = y.cuda()
+                x = x.to(DEVICE).view(x.size(0), -1)
+                y = y.to(DEVICE)
                 out = model.forward(x)
                 loss = model.loss(out, y)
                 loss.backward()
@@ -187,8 +163,8 @@ def SPDG(model, optimizer_primal, optimizer_dual, data_loader, test_loader, num_
             siter = iter_
             for x, y in data_loader:
                 iter_ += 1
-                x = x.cuda().view(-1, model.ngram.n, 28*28).float()
-                y = y.cuda()
+                x = x.to(DEVICE).view(-1, model.ngram.n, 28*28).float()
+                y = y.to(DEVICE)
                 out = model.forward_sequences(x)
                 ploss = model.loss_primal(out, y)
                 dloss = model.loss_dual(out, y)
@@ -252,14 +228,13 @@ ngram[(9, 0, 1)] = 1.
 # ngram[(9, 5, 1)] = 0.
 ngram.norm()
 
-batch_size = 128
-data_loader = train_loader_MNIST(batch_size)
-test_loader = test_loader_MNIST(batch_size)
-sequence_loader = sequence_loader_MNIST(batch_size, ngram, num_samples=20000)
+data_loader = train_loader_MNIST(BATCH_SIZE)
+test_loader = test_loader_MNIST(BATCH_SIZE)
+sequence_loader = sequence_loader_MNIST(BATCH_SIZE, ngram, num_samples=20000)
 
 # %% REGULAR TRAINING (SGD)
 model = Model(ngram)
-model.cuda()
+model.to(DEVICE)
 model.init_weights()
 
 optimizer = torch.optim.Adam(model.primal.parameters())
@@ -267,7 +242,7 @@ history = SGD(model, optimizer, data_loader, test_loader, num_epochs=3, log_ever
 
 # %% DUAL TRAINING
 model = Model(ngram, output_size=10)
-model.cuda()
+model.to(DEVICE)
 model.init_weights()
 
 primal_lr = 1e-6

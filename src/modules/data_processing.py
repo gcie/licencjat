@@ -7,8 +7,13 @@ from time import gmtime, strftime
 import torch
 import numpy as np
 from torchvision import datasets, transforms
-from modules.utils import categorical
 from modules.ngram import Ngram
+from config import BATCH_SIZE
+
+
+def categorical(probs, num_samples=1):
+    """Sample indices of probs with specified probabilities."""
+    return np.asarray([probs.sample(np.random.rand()) for _ in range(num_samples)])
 
 
 def dump_data_to_local(content, fname=None):
@@ -54,21 +59,21 @@ class SequentialMNIST(torch.utils.data.Dataset):
         return self.data[index], self.targets[index]
 
 
-def sequence_loader_MNIST(batch_size, ngram, num_samples):
+def sequence_loader_MNIST(ngram, num_samples):
     data = SequentialMNIST(ngram, num_samples)
-    return torch.utils.data.DataLoader(data, batch_size=batch_size, shuffle=True)
+    return torch.utils.data.DataLoader(data, batch_size=BATCH_SIZE, shuffle=True)
 
 
-def train_loader_MNIST(batch_size):
+def train_loader_MNIST():
     data = datasets.MNIST('./MNIST', train=True, download=True,
                           transform=transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,)), ]))
-    return torch.utils.data.DataLoader(data, batch_size=batch_size, shuffle=True)
+    return torch.utils.data.DataLoader(data, batch_size=BATCH_SIZE, shuffle=True)
 
 
-def test_loader_MNIST(batch_size):
+def test_loader_MNIST():
     data = datasets.MNIST('./MNIST', train=False, download=True,
                           transform=transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,)), ]))
-    return torch.utils.data.DataLoader(data, batch_size=batch_size, shuffle=False)
+    return torch.utils.data.DataLoader(data, batch_size=BATCH_SIZE, shuffle=False)
 
 
 def sequential_MNIST(num_samples, sequence_length, load=True, save=True, path="./dataset"):
