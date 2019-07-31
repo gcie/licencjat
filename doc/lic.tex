@@ -49,14 +49,41 @@ recognition without labeled data, but using sequential output statistics (in for
 
 %%%%% POCZĄTEK ZASADNICZEGO TEKSTU PRACY
 
-\chapter{Wprowadzenie}
+\chapter{Introduction}
+
+Most machine learning models require two main factors to function: well 
+designed model and (usually a lot of) data. Preparing a model usually does not
+raise problems - there are a lot of them available online, and their perfromance
+usually allows them to learn on semi-advanced, affordable machines. But to do so,
+we also need a second factor - data. Especially in text recognition 
+it seems that we cannot build a decent model without any labeled samples, and
+gathering such data requires a lot of human effort. Hence in this work I will study 
+possibility of training neural net to recognize written text without labeled data, 
+but only using sequential statistics regarding ouptut, as in \cite{main_paper}, 
+except that we will use smaller, simpler and higher-variance dataset and more 
+complex model.
+
+\section{Problem formulation}
+
+As mentioned before, we consider problem of learning text classifier using dataset
+consisting (pure, not labeled) sequences of data and their output statistics. In 
+language processing obtaining such dataset is largely simpler that labeling data,
+as it is enough to get images of written text in specific language and for output 
+statistics use easily obtainable n-grams of this language. Specifically: our classifier
+predicts sequences $(y_1, \dots y_n)$ (labels) from input sequences $(x_1, \dots x_n)$. The 
+algorith has access to dataset $D = \lbrace (x_1^k, \dots x_n^k) : k = 1, \dots M \rbrace$ of
+unlabeled sequences, and to n-gram probabilities of such dataset 
+
+
 
 \chapter{Output Distribution Match}
 
 %%%%% BIBLIOGRAFIA
 
-% \begin{thebibliography}{1}
-% \bibitem{example} test 
-% \end{thebibliography}
+\begin{thebibliography}{1}
+\bibitem{main_paper} Yu Liu, Jianshu Chen, Li Deng. "Unsupervised Sequence Classification using
+Sequential Output Statistics"
+
+\end{thebibliography}
 
 \end{document}

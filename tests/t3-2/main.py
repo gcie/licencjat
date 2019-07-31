@@ -8,40 +8,22 @@ from src.model import Model
 from config import DEVICE
 from src.training import SGD, SPDG
 
-torch.manual_seed(413862)
-np.random.seed(8752643)
+torch.manual_seed(514579)
+np.random.seed(9173537)
 
 # %% GENERATING DATASET
 n = 3
-ngram = Ngram(n)  # create_ngram(np.array([[0, 1, 2]]), n)
-# ngram[(0, 1, 2, 3, 4, 5, 6, 7, 8, 9)] = 1.
-ngram[(0, 1, 2)] = 11.
-ngram[(1, 2, 3)] = 3.
-ngram[(4, 5, 6)] = 1.
-ngram[(5, 6, 7)] = 1.
-ngram[(6, 7, 8)] = 1.
-ngram[(7, 8, 9)] = 1.
-ngram[(8, 9, 0)] = 1.
-ngram[(9, 0, 1)] = 1.
-# ngram[(1, 3, 5)] = 0.
-# ngram[(5, 7, 9)] = 0.
-# ngram[(9, 5, 1)] = 0.
+ngram = Ngram(n)
+ngram[(0, 1, 2)] = 6.
+ngram[(1, 2, 3)] = 4.
 ngram.norm()
 
 data_loader = train_loader_MNIST()
 test_loader = test_loader_MNIST()
 sequence_loader = sequence_loader_MNIST(ngram, num_samples=20000)
 
-# %% REGULAR TRAINING (SGD)
-model = Model(ngram)
-model.to(DEVICE)
-model.init_weights()
-
-optimizer = torch.optim.Adam(model.primal.parameters())
-history = SGD(model, optimizer, data_loader, test_loader, num_epochs=3, log_every=50, test_every=1)
-
 # %% DUAL TRAINING
-model = Model(ngram, output_size=10)
+model = Model(ngram, output_size=4)
 model.to(DEVICE)
 model.init_weights()
 
@@ -52,19 +34,8 @@ optimizer_primal = torch.optim.Adam(model.primal.parameters(), lr=primal_lr)
 optimizer_dual = torch.optim.Adam(model.dual.parameters(), lr=dual_lr)
 
 history = SPDG(model, optimizer_primal, optimizer_dual, sequence_loader,
-               data_loader, test_loader, num_epochs=10, log_every=20, 
-               test_every=1, eval_predictions_on_data=True)
-
-
-# %% DUAL TRAINING (CONTINUATION)
-history = SPDG(model, optimizer_primal, optimizer_dual, sequence_loader,
-               data_loader, test_loader, num_epochs=20, log_every=100, test_every=1, history=history)
-
-
-# %% DUAL TRAINING (CONTINUATION VERY LONG)
-history = SPDG(model, optimizer_primal, optimizer_dual, sequence_loader,
-               test_loader, num_epochs=1000, log_every=20, test_every=1, history=history)
-
+               data_loader, test_loader, num_epochs=50, log_every=20, test_every=1,
+               eval_predictions_on_data=True)
 
 # %% PLOTTING TEST
 

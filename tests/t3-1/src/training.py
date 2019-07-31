@@ -1,5 +1,4 @@
 import time
-
 from config import DEVICE
 from src.statistics import get_statistics
 
@@ -47,10 +46,11 @@ def SGD(model, optimizer, data_loader, test_loader, num_epochs=5, log_every=1, t
     return history
 
 
-def SPDG(model, optimizer_primal, optimizer_dual, data_loader, test_loader, num_epochs=5, log_every=1, test_every=1,
-         history=None):
+def SPDG(model, optimizer_primal, optimizer_dual, sequence_loader, data_loader, test_loader, num_epochs=5, log_every=1, test_every=1,
+         history=None, eval_predictions_on_data=False):
     if history is None:
-        history = dict(err_rate=[], ploss=[], loss=[], test_err_rate=[], dual=[], predictions=[], predictions_data=[])
+        history = dict(err_rate=[], ploss=[], loss=[], test_err_rate=[], dual=[], 
+            predictions=[], predictions_data=[])
         for idx in model.dual:
             history['dual ' + str(idx)] = []
     model.train()
@@ -61,12 +61,12 @@ def SPDG(model, optimizer_primal, optimizer_dual, data_loader, test_loader, num_
             if epoch_ % test_every == 0:
                 msg = "Minibatch |   p-loss   |    loss    | err rate | steps/s |"
                 for i in model.dual:
-                    msg += " {:>9} |".format(i)
+                    msg += " {} |".format(i)
                 print(msg)
             epoch_ += 1
             stime = time.time()
             siter = iter_
-            for x, y in data_loader:
+            for x, y in sequence_loader:
                 iter_ += 1
                 x = x.to(DEVICE).view(-1, model.ngram.n, 28*28).float()
                 y = y.to(DEVICE)
@@ -95,7 +95,7 @@ def SPDG(model, optimizer_primal, optimizer_dual, data_loader, test_loader, num_
 
                 if iter_ % log_every == 0:
                     num_iter = iter_ - siter
-                    msg = " {:>7d}  | {:>10.2e} | {:>10.2e} | {:>7.2f}% | {:>7.2f} |".format(iter_, ploss_, loss_, err_rate,
+                    msg = "{:>8}  | {:>10.2e} | {:>10.2e} | {:>7.2f}% | {:>7.2f} |".format(iter_, ploss_, loss_, err_rate,
                                                                                            num_iter / (time.time() - stime))
                     for idx in model.dual:
                         msg += " {:>8.2f}  |".format(model.dual[idx])
@@ -103,12 +103,17 @@ def SPDG(model, optimizer_primal, optimizer_dual, data_loader, test_loader, num_
                     siter = iter_
                     stime = time.time()
             if epoch_ % test_every == 0:
-                history['predictions'].append(get_statistics(model, test_loader=test_loader))
-                history['predictions_data'].append(get_statistics(model, test_loader=data_loader))
+                epmsg = "Epoch {:>3} | Test errors for: ".format(epoch_)
+                history['predictions'].append(get_statistics(model, data_loader=test_loader))
+                for i in range(model.output_size):
+                    accuracy = 100.0 - 100.0 * history['predictions'][-1][i, i] / history['predictions'][-1][i].sum()
+                    epmsg += " {}: {:.2f}, ".format(i, accuracy)
+                epmsg = epmsg[:-2]
+                if eval_predictions_on_data:
+                    history['predictions_data'].append(get_statistics(model, data_loader=data_loader))
                 test_err_rate = model.compute_error_rate(test_loader)
                 history['test_err_rate'].append(test_err_rate)
-                msg = "Epoch {:>10d} | Test error rate: {:.2f}".format(epoch_, test_err_rate)
-                print('{0}\n{1}\n{0}'.format('---------------------------------------------------------+', msg))
+                print('{0}+\n{1}\n{0}+'.format('-' * (len(msg) - 1), epmsg))
     except KeyboardInterrupt:
         pass
     return history

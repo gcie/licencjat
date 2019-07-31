@@ -2,10 +2,6 @@
 \babel@toc {polish}{}
 \babel@toc {english}{}
 \babel@toc {polish}{}
-\babel@toc {english}{}
-\babel@toc {polish}{}
-\babel@toc {english}{}
-\babel@toc {polish}{}
 \babel@toc {polish}{}
 \babel@toc {polish}{}
 \babel@toc {polish}{}
@@ -13,7 +9,7 @@
 \babel@toc {polish}{}
 \babel@toc {english}{}
 \babel@toc {polish}{}
-\babel@toc {english}{}
-\babel@toc {polish}{}
-\contentsline {chapter}{\numberline {1.}Wprowadzenie}{7}{chapter.1}% 
+\contentsline {chapter}{\numberline {1.}Introduction}{7}{chapter.1}% 
+\contentsline {section}{\numberline {1.1.}Problem formulation}{7}{section.1.1}% 
 \contentsline {chapter}{\numberline {2.}Output Distribution Match}{9}{chapter.2}% 
+\contentsline {chapter}{Bibliografia}{11}{chapter*.2}% 

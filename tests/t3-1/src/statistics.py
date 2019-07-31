@@ -5,15 +5,15 @@ from config import DEVICE
 from src.data_processing import test_loader_MNIST
 
 
-def get_statistics(model, test_loader=None):
-    if test_loader is None:
-        test_loader = test_loader_MNIST()
+def get_statistics(model, data_loader=None):
+    if data_loader is None:
+        data_loader = test_loader_MNIST()
     model.eval()
     num_errs = 0.0
     num_examples = 0
     results = np.zeros((10, model.output_size), dtype='int32')
     with torch.no_grad():
-        for x, y in test_loader:
+        for x, y in data_loader:
             # x = x.to(DEVICE).view(-1, 1, 28, 28).float()
             x = x.to(DEVICE).view(-1, 28*28).float()
             y = y.to(DEVICE)
@@ -29,3 +29,4 @@ def get_statistics(model, test_loader=None):
             num_examples += x.size(0)
     model.train()
     return results
+

@@ -12,6 +12,7 @@ class Model(nn.Module):
         super(Model, self).__init__()
         self.ngram = ngram
         self.cnt = 1
+        self.output_size = output_size
         for idx in ngram:
             ngram[idx]
         if architecture is None:
@@ -26,7 +27,8 @@ class Model(nn.Module):
             self.primal = architecture.to(DEVICE)
         self.dual = Ngram(self.ngram.n)
         for idx in self.ngram:
-            self.dual[idx] = torch.tensor(0.).uniform_(-1, 0).to(DEVICE).requires_grad_()
+            self.dual[idx] = torch.tensor(-1. / self.ngram[idx]).to(DEVICE).requires_grad_()
+            # self.dual[idx] = torch.tensor(0.).uniform_(-1, 0).to(DEVICE).requires_grad_()
         self.to(DEVICE)
         self.init_weights()
 
