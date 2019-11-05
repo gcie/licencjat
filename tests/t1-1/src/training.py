@@ -1,5 +1,7 @@
 import time
 
+import torch
+
 from config import DEVICE
 from src.statistics import get_statistics
 
@@ -47,10 +49,11 @@ def SGD(model, optimizer, data_loader, test_loader, num_epochs=5, log_every=1, t
     return history
 
 
-def SPDG(model, optimizer_primal, optimizer_dual, data_loader, test_loader, num_epochs=5, log_every=1, test_every=1,
-         history=None):
+def SPDG(model, optimizer_primal, optimizer_dual, sequence_loader, data_loader, test_loader, num_epochs=5, log_every=1, test_every=1,
+         history=None, eval_predictions_on_data=False, show_dual=False):
     if history is None:
-        history = dict(err_rate=[], ploss=[], loss=[], test_err_rate=[], dual=[], predictions=[], predictions_data=[])
+        history = dict(err_rate=[], ploss=[], loss=[], test_err_rate=[], dual=[], 
+                       predictions=[], predictions_data=[])
         for idx in model.dual:
             history['dual ' + str(idx)] = []
     model.train()
@@ -60,13 +63,14 @@ def SPDG(model, optimizer_primal, optimizer_dual, data_loader, test_loader, num_
         while epoch_ < num_epochs:
             if epoch_ % test_every == 0:
                 msg = "Minibatch |   p-loss   |    loss    | err rate | steps/s |"
-                for i in model.dual:
-                    msg += " {:>9} |".format(i)
+                if show_dual:
+                    for i in model.dual:
+                        msg += " {:>7d} |".format(i)
                 print(msg)
             epoch_ += 1
             stime = time.time()
             siter = iter_
-            for x, y in data_loader:
+            for x, y in sequence_loader:
                 iter_ += 1
                 x = x.to(DEVICE).view(-1, model.ngram.n, 28*28).float()
                 y = y.to(DEVICE)
@@ -84,31 +88,38 @@ def SPDG(model, optimizer_primal, optimizer_dual, data_loader, test_loader, num_
                 dloss.backward()
                 optimizer_dual.step()
 
-                _, predictions = out.max(dim=2)
-                a = predictions.view(-1) != y.view(-1)
-                err_rate = 100.0 * a.sum().item() / (out.size(1) * out.size(0))
-                history['err_rate'].append(err_rate)
-                history['ploss'].append(ploss_)
-                history['loss'].append(loss_)
-                for idx in model.dual:
-                    history['dual ' + str(idx)].append(model.dual[idx])
-
-                if iter_ % log_every == 0:
-                    num_iter = iter_ - siter
-                    msg = " {:>7d}  | {:>10.2e} | {:>10.2e} | {:>7.2f}% | {:>7.2f} |".format(iter_, ploss_, loss_, err_rate,
-                                                                                           num_iter / (time.time() - stime))
+                with torch.no_grad():
+                    _, predictions = out.max(dim=2)
+                    a = predictions.view(-1) != y.view(-1)
+                    err_rate = 100.0 * a.sum().item() / (out.size(1) * out.size(0))
+                    history['err_rate'].append(err_rate)
+                    history['ploss'].append(ploss_)
+                    history['loss'].append(loss_)
                     for idx in model.dual:
-                        msg += " {:>8.2f}  |".format(model.dual[idx])
-                    print(msg)
-                    siter = iter_
-                    stime = time.time()
+                        history['dual ' + str(idx)].append(model.dual[idx])
+
+                    if iter_ % log_every == 0:
+                        num_iter = iter_ - siter
+                        msg = "{:>8}  | {:>10.2f} | {:>10.2f} | {:>7.2f}% | {:>7.2f} |".format(iter_, ploss_, loss_, err_rate,
+                                                                                               num_iter / (time.time() - stime))
+                        if show_dual:
+                            for idx in model.dual:
+                                msg += " {:>7.2f} |".format(model.dual[idx])
+                        print(msg)
+                        siter = iter_
+                        stime = time.time()
             if epoch_ % test_every == 0:
-                history['predictions'].append(get_statistics(model, test_loader=test_loader))
-                history['predictions_data'].append(get_statistics(model, test_loader=data_loader))
+                epmsg = "Epoch {:>3} | Test errors for: ".format(epoch_)
+                history['predictions'].append(get_statistics(model, data_loader=test_loader))
+                for i in range(model.output_size):
+                    accuracy = 100.0 - 100.0 * history['predictions'][-1][i, i] / history['predictions'][-1][i].sum()
+                    epmsg += " {}: {:.2f}, ".format(i, accuracy)
+                epmsg = epmsg[:-2]
+                if eval_predictions_on_data:
+                    history['predictions_data'].append(get_statistics(model, data_loader=data_loader))
                 test_err_rate = model.compute_error_rate(test_loader)
                 history['test_err_rate'].append(test_err_rate)
-                msg = "Epoch {:>10d} | Test error rate: {:.2f}".format(epoch_, test_err_rate)
-                print('{0}\n{1}\n{0}'.format('---------------------------------------------------------+', msg))
+                print('{0}+\n{1}\n{0}+'.format('-' * (len(msg) - 1), epmsg))
     except KeyboardInterrupt:
         pass
     return history

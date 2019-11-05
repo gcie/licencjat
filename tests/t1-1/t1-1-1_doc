@@ -1,3 +1,0 @@
-primal_lr: 1e-05
-dual_lr: 0.001
-n: 1

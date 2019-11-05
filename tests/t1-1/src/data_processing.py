@@ -35,16 +35,13 @@ class SequentialMNIST(torch.utils.data.Dataset):
         if sequence_length is not None:
             warnings.warn("Variable sequence_length is unused. Sequence generated have \
                 length equal to n (from ngram)")
-        data = datasets.MNIST(MNIST_LOC, train=True, download=True,
-                              transform=transforms.Compose([
-                                  transforms.ToTensor(),
-                                  transforms.Normalize((0.1307,), (0.3081,))
-                              ]))
+        data = datasets.MNIST(MNIST_LOC, train=True, download=True)
         split_data = dict()
         for i in range(10):
-            split_data[i] = data.train_data.numpy()[data.train_labels.numpy() == i]
-        self.data = np.zeros((num_samples, ngram.n, 28, 28))
+            split_data[i] = data.data.numpy()[data.targets.numpy() == i]
+        self.data = np.zeros((num_samples, ngram.n, 28, 28), dtype='float32')
         self.targets = categorical(ngram, num_samples).astype('int64')
+        self.transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,)), ])
         for i in range(num_samples):
             for j in range(10):
                 if (self.targets[i, ...] == j).any():
@@ -56,7 +53,7 @@ class SequentialMNIST(torch.utils.data.Dataset):
         return len(self.data)
 
     def __getitem__(self, index):
-        return self.data[index], self.targets[index]
+        return self.transform(self.data[index]), self.targets[index]
 
 
 def sequence_loader_MNIST(ngram, num_samples):
@@ -109,3 +106,20 @@ def create_ngram(sentences, n):
         for i in range(len(sentence) - n + 1):
             ngram[tuple(sentence[i:i+n])] += 1
     return ngram.norm()
+
+
+def randomized_ngram(n, entries, out_dim=10):
+    """Create randomized n-gram"""
+    ngram = Ngram(n)
+    while ngram.size() < entries:
+        ngram[tuple(np.random.randint(0, out_dim, n))] = np.random.random()
+    return ngram.norm()
+
+
+def sequence_ngram(n, entries, out_dim=10):
+    """Create sequence-based n-gram"""
+    ngram = Ngram(n)
+    idx = np.random.randint(0, out_dim, n)
+    while ngram.size() < entries:
+        ngram[tuple(idx)] = np.random.random()
+        idx = np.append(idx[1:], np.random.randint(0, out_dim))
