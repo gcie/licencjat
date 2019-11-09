@@ -1,18 +1,21 @@
 # %% IMPORTS
-import torch
 import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib as mpl
-from src.data_processing import Ngram, train_loader_MNIST, test_loader_MNIST, sequence_loader_MNIST, randomized_ngram
-from src.model import Model
-from config import DEVICE
-from src.training import SGD, SPDG
+import torch
 
-torch.manual_seed(1234567890)
-np.random.seed(9876543210)
+from config import DEVICE
+from src.data_processing import (Ngram, randomized_ngram,
+                                 sequence_loader_MNIST, test_loader_MNIST,
+                                 train_loader_MNIST)
+from src.model import Model
+from src.remote import mpl
+from src.training import SGD, SPDG
+import matplotlib.pyplot as plt
+
+torch.manual_seed(12345678)
+np.random.seed(87654321)
 
 # %% GENERATING DATASET
-n = 3
+# n = 3
 # ngram = Ngram(n)  # create_ngram(np.array([[0, 1, 2]]), n)
 # # ngram[(0, 1, 2, 3, 4, 5, 6, 7, 8, 9)] = 1.
 # ngram[(0, 1, 2)] = 11.
@@ -27,7 +30,12 @@ n = 3
 # # ngram[(5, 7, 9)] = 0.
 # # ngram[(9, 5, 1)] = 0.
 # ngram.norm()
-ngram = randomized_ngram(3, 10, 5)
+# ngram = randomized_ngram(3, 10, 5)
+n = 1
+ngram = Ngram(n)
+ngram[(0)] = 1.
+ngram[(1)] = 9.
+ngram.norm()
 
 data_loader = train_loader_MNIST()
 test_loader = test_loader_MNIST()
@@ -70,6 +78,18 @@ history = SPDG(model, optimizer_primal, optimizer_dual, sequence_loader,
                test_loader, num_epochs=1000, log_every=50, test_every=1, history=history)
 
 
+# %% SAVE
+fname = 'main_test'
+comment = ''
+
+np.save(fname + '_hist', history)
+np.save(fname + '_model', model)
+np.save(fname + '_ngram', ngram)
+
+with open(fname + '_doc', "w+") as doc:
+    doc.write("primal_lr: {}\ndual_lr: {}\nn: {}\n{}".format(primal_lr, dual_lr, ngram.n, comment))
+
+
 # %% PLOTTING TEST
 
 xs = range(len(history['predictions']))
@@ -104,18 +124,7 @@ print("\nn | acc\n--+------")
 for i, x in zip(range(10), np.diag(stats) / stats.sum(axis=1) * 100.0):
     print("{} | {:>5.2f}".format(i, x))
 
-# %% SAVE
-fname = 'main_test'
-comment = ''
-
-np.save(fname + '_hist', history)
-np.save(fname + '_model', model)
-np.save(fname + '_ngram', ngram)
-
-with open(fname + '_doc', "w+") as doc:
-    doc.write("primal_lr: {}\ndual_lr: {}\nn: {}\n{}".format(primal_lr, dual_lr, ngram.n, comment))
-
-
 # %% RESTORE
 
-# TODO
+fname = 'main_test'
+history = np.load(fname + '_hist.npy').item()

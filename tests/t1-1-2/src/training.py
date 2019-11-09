@@ -104,7 +104,7 @@ def SPDG(model, optimizer_primal, optimizer_dual, sequence_loader, data_loader, 
                                                                                                num_iter / (time.time() - stime))
                         if show_dual:
                             for idx in model.dual:
-                                msg += " {:>7.2f} |".format(model.dual[idx].item())
+                                msg += " {:>7.2f} |".format(model.dual[idx])
                         print(msg)
                         siter = iter_
                         stime = time.time()

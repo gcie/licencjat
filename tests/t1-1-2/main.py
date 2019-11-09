@@ -1,21 +1,18 @@
 # %% IMPORTS
-import matplotlib as mpl
-import matplotlib.pyplot as plt
-import numpy as np
 import torch
-# from scipy import signal
-
-from config import DEVICE
-from src.data_processing import (Ngram, sequence_loader_MNIST,
-                                 test_loader_MNIST, train_loader_MNIST)
+import numpy as np
+import matplotlib as mpl
+mpl.use('agg')
+import matplotlib.pyplot as plt
+from src.data_processing import Ngram, train_loader_MNIST, test_loader_MNIST, sequence_loader_MNIST, randomized_ngram
 from src.model import Model
-from src.training import SPDG
-from src.statistics import get_statistics
+from config import DEVICE
+from src.training import SGD, SPDG
 
-torch.manual_seed(4134862)
-np.random.seed(875263)
+torch.manual_seed(427254326)
+np.random.seed(935542737)
 
-# GENERATING DATASET
+# %% GENERATING DATASET
 n = 1
 ngram = Ngram(n)
 ngram[(0)] = 1.
@@ -37,21 +34,21 @@ dual_lr = 1e-4
 optimizer_primal = torch.optim.Adam(model.primal.parameters(), lr=primal_lr)
 optimizer_dual = torch.optim.Adam(model.dual.parameters(), lr=dual_lr)
 
-history = SPDG(model, optimizer_primal, optimizer_dual, sequence_loader,
-               test_loader, num_epochs=1000, log_every=100, test_every=5)
+history = SPDG(model, optimizer_primal, optimizer_dual, sequence_loader, sequence_loader,
+               test_loader, num_epochs=1000, log_every=100, test_every=5,
+               eval_predictions_on_data=True, show_dual=True)
 
 
-# %% DUAL TRAINING (CONTINUATION)
-history = SPDG(model, optimizer_primal, optimizer_dual, sequence_loader,
-               test_loader, num_epochs=60, log_every=20, test_every=1, history=history)
+# %% SAVE
+fname = 't1-1-2'
+comment = ''
 
+np.save(fname + '_hist', history)
+np.save(fname + '_model', model)
+np.save(fname + '_ngram', ngram)
 
-# %% STATISTICS
-stats = history['predictions'][194]
-print(stats)
-print("\nn | acc\n--+------")
-for i, x in zip(range(2), np.diag(stats) / stats.sum(axis=1) * 100.0):
-    print("{} | {:>5.2f}".format(i, x))
+with open(fname + '_doc', "w+") as doc:
+    doc.write("primal_lr: {}\ndual_lr: {}\nn: {}\n{}".format(primal_lr, dual_lr, ngram.n, comment))
 
 # %% PLOTTING TEST
 
@@ -65,8 +62,8 @@ mpl.style.use('seaborn')
 plt.plot(xs, ys0, label='0')
 plt.plot(xs, ys1, label='1')
 plt.legend()
-plt.savefig("fig_1")
-
+plt.savefig("predictions_test_error")
+plt.close()
 # %% PLOTTING DATA
 
 xs = np.arange(len(history['predictions_data'])) * 5
@@ -79,22 +76,17 @@ mpl.style.use('seaborn')
 plt.plot(xs, ys0, label='0')
 plt.plot(xs, ys1, label='1')
 plt.legend()
-plt.savefig("fig_2")
-# %% SAVE
+plt.savefig("predictions_data_error")
+plt.close()
+# %% STATISTICS
+# stats = history['predictions'][-1]
+# print(stats)
+# print("\nn | acc\n--+------")
+# for i, x in zip(range(10), np.diag(stats) / stats.sum(axis=1) * 100.0):
+#     print("{} | {:>5.2f}".format(i, x))
+
+
+# %% RESTORE
+
 fname = 't1-1-2'
-comment = ''
-
-np.save(fname + '_hist', history)
-np.save(fname + '_model', model)
-np.save(fname + '_ngram', ngram)
-
-with open(fname + '_doc', "w+") as doc:
-    doc.write("primal_lr: {}\ndual_lr: {}\nn: {}\n{}".format(primal_lr, dual_lr, ngram.n, comment))
-
-# %% LOAD HISTORY
-fname = 't1-1-1'
-
 history = np.load(fname + '_hist.npy').item()
-
-
-# %%
