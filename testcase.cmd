@@ -18,13 +18,9 @@ if "%2"=="remote" (
     powershell -Command "(gc tests/%1/src/remote.py) -replace 'remote = False', 'remote = True' | Out-File -encoding ASCII tests/%1/src/remote.py"
     set HOST="grzesiek@guccihome.ddns.net"
     ssh "%HOST%" "mkdir ~/licencjat/%1"
-    scp "tests/%1/main.py" "%HOST%:~/licencjat/%1/main.py"
-    scp "tests/%1/config.py" "%HOST%:~/licencjat/%1/config.py"
-    scp -r "tests/%1/src" "%HOST%:~/licencjat/%1/src"
+    scp -r "tests/%1" "%HOST%:~/licencjat"
 )
 if "%2"=="sync" (
     set HOST="grzesiek@guccihome.ddns.net"
-    scp "%HOST%:~/licencjat/%1/main.py" "tests/%1/main.py"
-    scp "%HOST%:~/licencjat/%1/config.py" "tests/%1/config.py"
-    scp -r "%HOST%:~/licencjat/%1/src" "tests/%1"
+    scp -r "%HOST%:~/licencjat/%1" "tests"
 )

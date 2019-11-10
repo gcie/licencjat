@@ -53,7 +53,10 @@ class SequentialMNIST(torch.utils.data.Dataset):
         return len(self.data)
 
     def __getitem__(self, index):
-        return self.transform(self.data[index]), self.targets[index]
+        res = self.transform(self.data[index][0])
+        for i in range(1, self.data.shape[1]):
+            res = torch.cat((res, self.transform(self.data[index][i])), 0)
+        return res, self.targets[index]
 
 
 def sequence_loader_MNIST(ngram, num_samples):

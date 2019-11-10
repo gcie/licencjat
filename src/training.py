@@ -50,7 +50,7 @@ def SGD(model, optimizer, data_loader, test_loader, num_epochs=5, log_every=1, t
 
 
 def SPDG(model, optimizer_primal, optimizer_dual, sequence_loader, data_loader, test_loader, num_epochs=5, log_every=1, test_every=1,
-         history=None, eval_predictions_on_data=False, show_dual=False):
+         eval_predictions_on_data=False, show_dual=False, history=None):
     if history is None:
         history = dict(err_rate=[], ploss=[], loss=[], test_err_rate=[], dual=[], 
                        predictions=[], predictions_data=[])
