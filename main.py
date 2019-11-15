@@ -17,8 +17,9 @@ np.random.seed(87654321)
 
 # %% GENERATING DATASET
 ngram = Ngram(3)
-ngram[(0, 1, 2)] = 9.
-ngram[(1, 2, 3)] = 1.
+ngram[(0, 1, 2)] = 80.
+ngram[(1, 2, 3)] = 10.
+ngram[(2, 3, 4)] = 10.
 ngram.norm()
 
 data_loader = train_loader_MNIST()
@@ -34,16 +35,16 @@ sequence_loader = sequence_loader_MNIST(ngram, num_samples=40000)
 # history = SGD(model, optimizer, data_loader, test_loader, num_epochs=1, log_every=50, test_every=1)
 
 # %% DUAL TRAINING
-model = Model(ngram, output_size=4)
+model = Model(ngram, output_size=5)
 model.to(DEVICE)
 model.init_weights()
 
 primal_lr = 1e-6
 dual_lr = 1e-4
 
-num_epochs = 10
+num_epochs = 1000
 log_every = 100     # batches
-test_every = 1      # epochs
+test_every = 5      # epochs
 
 optimizer_primal = torch.optim.Adam(model.primal.parameters(), lr=primal_lr)
 optimizer_dual = torch.optim.Adam(model.dual.parameters(), lr=dual_lr)

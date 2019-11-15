@@ -1,5 +1,11 @@
 @echo off
 
+if "%3"=="" (
+    set HOST="grzesiek@guccihome.ddns.net"
+) else (
+    set HOST="i290956@%3.stud.ii"
+)
+
 if not "%2"=="sync" (
     mkdir "tests/%1"
     cp -r src "tests/%1"
@@ -16,11 +22,9 @@ if not "%2"=="sync" (
 
 if "%2"=="remote" (
     powershell -Command "(gc tests/%1/src/remote.py) -replace 'remote = False', 'remote = True' | Out-File -encoding ASCII tests/%1/src/remote.py"
-    set HOST="grzesiek@guccihome.ddns.net"
     ssh "%HOST%" "mkdir ~/licencjat/%1"
     scp -r "tests/%1" "%HOST%:~/licencjat"
 )
 if "%2"=="sync" (
-    set HOST="grzesiek@guccihome.ddns.net"
     scp -r "%HOST%:~/licencjat/%1" "tests"
 )

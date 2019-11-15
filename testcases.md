@@ -20,7 +20,8 @@ If out_dim = 5, then there are 125 possible combinations of 3-element sequences.
     - [t3-3] out_dim = 4, ngram {(0, 1, 2): 95%, (1, 2, 3): 5%}
     - [t3-4] out_dim = 5, ngram {(0, 1, 2): 80%, (1, 2, 3): 10%, (2, 3, 4): 10%}
     - [t3-5] out_dim = 5, ngram {(0, 1, 2): 20%, (1, 2, 3): 20%, (2, 3, 4): 20%, (3, 4, 0): 20%, (4, 0, 1): 20%} (NOTE: cyclic test)
-    - [t3-6] out_dim = 5, ngram {(0, 1, 2): 50%, (1, 2, 3): 20%, (2, 3, 4): 30%}
+    - [t3-6] out_dim = 5, ngram {(0, 1, 2): 60%, (1, 2, 3): 10%, (2, 3, 4): 10%, (3, 4, 0): 10%, (4, 0, 1): 10%} (NOTE: imbalanced cyclic test)
+    - [t3-7] out_dim = 5, ngram {(0, 1, 2): 50%, (1, 2, 3): 20%, (2, 3, 4): 30%}
 - [t4] dense 3-gram (>10 entries)
     - [t4-1] randomized, 10 entries
     - [t4-2] randomized, 20 entries
@@ -28,3 +29,5 @@ If out_dim = 5, then there are 125 possible combinations of 3-element sequences.
     - [t4-4] sequence-like, 20 entries
     - [t4-5] sequence-like, 40 entries
     - [t4-6] sequence-like, 60 entries
+
+### 3-grams with large output
