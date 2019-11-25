@@ -1,0 +1,92 @@
+% Opcje klasy 'iithesis' opisane sa w komentarzach w pliku klasy. Za ich pomoca
+% ustawia sie przede wszystkim jezyk i rodzaj (lic/inz/mgr) pracy, oraz czy na
+% drugiej stronie pracy ma byc skladany wzor oswiadczenia o autorskim wykonaniu.
+% \documentclass[declaration,shortabstract]{iithesis}
+\documentclass[shortabstract]{iithesis}
+
+\usepackage[utf8]{inputenc}
+
+%%%%% DANE DO STRONY TYTUŁOWEJ
+% Niezaleznie od jezyka pracy wybranego w opcjach klasy, tytul i streszczenie
+% pracy nalezy podac zarowno w jezyku polskim, jak i angielskim.
+% Pamietaj o madrym (zgodnym z logicznym rozbiorem zdania oraz estetyka) recznym
+% zlamaniu wierszy w temacie pracy, zwlaszcza tego w jezyku pracy. Uzyj do tego
+% polecenia \fmlinebreak.
+\polishtitle    {Wymagający złamania wierszy\fmlinebreak tytuł pracy w~języku polskim}
+\englishtitle   {English title}
+\polishabstract {Poniższa praca sprawdza hipotezę, że można nauczyc sieć neuronową rozpoznawać tekst bez 
+korzystania z podpisanych próbek tekstu, a jedynie z rokładów prawdopodobieństw wystąpienia pewnych sekwencji
+liter (n-gramów) w danych uczących.}
+\englishabstract{Below thesis validates hypothesis whether it is possible to teach a neural network text
+recognition without labeled data, but using sequential output statistics (in form of n-grams) only.}
+% w pracach wielu autorow nazwiska mozna oddzielic poleceniem \and
+\author         {Grzegorz Ciesielski}
+% w przypadku kilku promotorow, lub koniecznosci podania ich afiliacji, linie
+% w ponizszym poleceniu mozna zlamac poleceniem \fmlinebreak
+\advisor        {dr Jan Chorowski}
+%\date          {}                     % Data zlozenia pracy
+% Dane do oswiadczenia o autorskim wykonaniu
+%\transcriptnum {}                     % Numer indeksu
+%\advisorgen    {dr. Jana Chorowskiego} % Nazwisko promotora w dopelniaczu
+%%%%%
+
+%%%%% WLASNE DODATKOWE PAKIETY
+%
+%\usepackage{graphicx,listings,amsmath,amssymb,amsthm,amsfonts,tikz}
+%
+%%%%% WŁASNE DEFINICJE I POLECENIA
+%
+%\theoremstyle{definition} \newtheorem{definition}{Definition}[chapter]
+%\theoremstyle{remark} \newtheorem{remark}[definition]{Observation}
+%\theoremstyle{plain} \newtheorem{theorem}[definition]{Theorem}
+%\theoremstyle{plain} \newtheorem{lemma}[definition]{Lemma}
+%\renewcommand \qedsymbol {\ensuremath{\square}}
+% ...
+%%%%%
+
+\begin{document}
+
+
+%%%%% POCZĄTEK ZASADNICZEGO TEKSTU PRACY
+
+\chapter{Introduction}
+
+Most machine learning models require two main factors to function: well 
+designed model and (usually a lot of) data. Preparing a model usually does not
+raise problems, as there are a lot of them available online and their perfromance
+usually allows them to learn on semi-advanced, affordable machines. But to do so,
+we also need a second factor: data. Especially in text recognition 
+it seems that we cannot build a decent model without any labeled samples, and
+gathering such data requires a lot of human effort. Hence in this work we will study 
+possibility of training neural net to recognize written text without labeled data, 
+but only using sequential statistics regarding ouptut, as in~\cite{main_paper}, 
+except that we will use smaller, simpler and higher-variance dataset and more 
+complex model of neural net.
+
+\section{Problem formulation}
+
+As mentioned before, we consider problem of learning text classifier using dataset
+consisting pure (not labeled) sequences of data and their output statistics. In 
+language processing obtaining such dataset is considerbaly simpler that labeled data,
+as it is enough to get images of written text in specific language and for output 
+statistics use easily obtainable n-grams of this language. Specifically: our classifier
+predicts sequences \( (y_1, \dots y_n) \) (labels) from input sequences \( (x_1, \dots x_n) \). The 
+algorithm has access to dataset \( D = \lbrace (x_1^k, \dots x_n^k) : k = 1, \dots M \rbrace \) of
+sequences, and to n-gram probabilities of such dataset - which is denoted as: 
+\[ p(i_1, \dots i_n) = p(y_1^k = i_1, \dots y_n^k = i_n) \]
+where \( i_1, \dots i_n \in \lbrace 0, 1, \cdots C \rbrace \), and \( y_j^k \) is the label 
+of letter \( x_j^k \).
+
+
+
+\chapter{Output Distribution Match}
+
+%%%%% BIBLIOGRAFIA
+
+\begin{thebibliography}{1}
+\bibitem{main_paper} Yu Liu, Jianshu Chen, Li Deng. ``Unsupervised Sequence Classification using
+Sequential Output Statistics''
+
+\end{thebibliography}
+
+\end{document}
