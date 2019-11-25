@@ -72,7 +72,7 @@ def SPDG(model, optimizer_primal, optimizer_dual, sequence_loader, data_loader, 
             siter = iter_
             for x, y in sequence_loader:
                 iter_ += 1
-                x = x.to(DEVICE).view(-1, model.ngram.n, 28*28).float()
+                x = x.to(DEVICE).view(-1, model.n, 28*28).float()
                 y = y.to(DEVICE)
                 out = model.forward_sequences(x)
                 ploss = model.loss_primal(out, y)

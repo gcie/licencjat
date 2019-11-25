@@ -11,6 +11,7 @@ class Model(nn.Module):
     def __init__(self, ngram, architecture=None, output_size=10):
         super(Model, self).__init__()
         self.ngram = ngram
+        self.n = ngram.n
         self.cnt = 1
         self.output_size = output_size
         for idx in ngram:
@@ -44,7 +45,7 @@ class Model(nn.Module):
     def loss_primal(self, output, target):
         loss = torch.tensor(0, dtype=torch.float32).to(DEVICE)
         for i in self.ngram:
-            loss += torch.sum(output[:, np.arange(self.ngram.n), i].prod(dim=1) * self.dual[i] * self.ngram[i])
+            loss += torch.sum(output[:, np.arange(self.n), i].prod(dim=1) * self.dual[i] * self.ngram[i])
         return loss / BATCH_SIZE
 
     def loss_dual(self, output, target):

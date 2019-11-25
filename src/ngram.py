@@ -5,6 +5,7 @@ from collections import defaultdict
 
 class Ngram(defaultdict):
     """Class implementation of n-gram probabilities in form of dictionary"""
+
     def __init__(self, n):
         super(Ngram, self).__init__(int)
         self.n = n

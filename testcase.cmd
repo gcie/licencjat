@@ -12,6 +12,7 @@ if not "%2"=="sync" (
 
     cp config.test.py "tests/%1/config.py"
     cp main.py "tests/%1/main.py"
+    cp run.sh "tests/%1/run.sh"
     set /a "r1=%RANDOM%*32768+%RANDOM%"
     set /a "r2=%RANDOM%*32768+%RANDOM%"
     powershell -Command "(gc tests/%1/main.py) -replace '12345678', '%r1%' | Out-File -encoding ASCII tests/%1/main.py"
