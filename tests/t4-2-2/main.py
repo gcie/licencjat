@@ -14,8 +14,8 @@ from src.training import SGD, SPDG
 from src.statistics import get_statistics
 import matplotlib.pyplot as plt
 
-torch.manual_seed(387004239)
-np.random.seed(316432352)
+torch.manual_seed(243513273)
+np.random.seed(550790970)
 
 
 def save(history, model, ngram, optimizer_primal, optimizer_dual, primal_lr, dual_lr, comment=''):
@@ -69,7 +69,7 @@ else:
     dual_lr = 1e-4
 
 # %% GENERATING DATASET
-ngram = randomized_ngram(3, 40, out_dim=5)
+ngram = randomized_ngram(3, 20, out_dim=5)
 
 data_loader = train_loader_MNIST()
 test_loader = test_loader_MNIST()
