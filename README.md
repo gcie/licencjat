@@ -40,9 +40,9 @@ If out_dim = 5, then there are 125 possible combinations of 3-element sequences.
 
 - TODO
 
-## 7-grams
+## 7-grams (out dim = 10)
 
-- TODO
+- [ ] **t7-1** randomized, 3 entries, 
 
 # Conclusions
 
@@ -52,7 +52,7 @@ On the charts we can see weird behaviours:
 - (a) learning basically stops after few hundred epochs
 - (b) sometimes it crashes and it starts learning both features quite well
 
-What happens? We have to take a look at our loss function (simplified for our case).
+What happens? We have to take a look at our loss function (simplified for our case):
 
 $$ \begin{aligned} 
 \mathcal{L}(\theta, V) &= \frac{1}{B}\left(\sum_{x \in \mathcal{B}} p_{LM}(0)\cdot v_0\cdot p_{\theta}(y=0 | x) + \sum_{x \in \mathcal{B}} p_{LM}(1)\cdot v_1\cdot p_{\theta}(y=1 | x)\right) + p_{LM}(0)\cdot\ln(-v_0) + p_{LM}(1)\cdot\ln(-v_1) = \\

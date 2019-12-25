@@ -14,8 +14,8 @@ from src.training import SGD, SPDG
 from src.statistics import get_statistics
 import matplotlib.pyplot as plt
 
-torch.manual_seed(687369545)
-np.random.seed(268311391)
+torch.manual_seed(739400915)
+np.random.seed(937632346)
 
 
 def save(history, model, ngram, optimizer_primal, optimizer_dual, primal_lr, dual_lr, comment=''):

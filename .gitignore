@@ -7,3 +7,6 @@ dataset/
 
 # python
 __pycache__
+
+# other
+tmp.py

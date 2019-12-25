@@ -3,6 +3,7 @@ import numpy as np
 import torch
 import argparse
 import os
+import sys
 
 from config import DEVICE
 from src.data_processing import (Ngram, randomized_ngram,
@@ -69,11 +70,12 @@ else:
     dual_lr = 1e-4
 
 # %% GENERATING DATASET
-ngram = randomized_ngram(3, 40, out_dim=5)
+ngram = randomized_ngram(7, 2, out_dim=10, min_var=2e-2)
+ngram.show()
 
 data_loader = train_loader_MNIST()
 test_loader = test_loader_MNIST()
-sequence_loader = sequence_loader_MNIST(ngram, num_samples=40000)
+sequence_loader = sequence_loader_MNIST(ngram, num_samples=20000)
 
 # %% REGULAR TRAINING (SGD)
 # model = Model(ngram)
@@ -88,7 +90,7 @@ if continuation:
     history, model, ngram, optimizer_primal, optimizer_dual = load()
     print(model.ngram.n)
 else:
-    model = Model(ngram, output_size=5)
+    model = Model(ngram, output_size=10)
     model.to(DEVICE)
     model.init_weights()
 
