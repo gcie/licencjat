@@ -2,8 +2,9 @@
 % ustawia sie przede wszystkim jezyk i rodzaj (lic/inz/mgr) pracy, oraz czy na
 % drugiej stronie pracy ma byc skladany wzor oswiadczenia o autorskim wykonaniu.
 % \documentclass[declaration,shortabstract]{iithesis}
-\documentclass[shortabstract]{iithesis}
+\documentclass[shortabstract,lic,english]{iithesis}
 
+\usepackage{natbib}
 \usepackage[utf8]{inputenc}
 
 %%%%% DANE DO STRONY TYTUŁOWEJ
@@ -12,28 +13,37 @@
 % Pamietaj o madrym (zgodnym z logicznym rozbiorem zdania oraz estetyka) recznym
 % zlamaniu wierszy w temacie pracy, zwlaszcza tego w jezyku pracy. Uzyj do tego
 % polecenia \fmlinebreak.
+
 \polishtitle    {Wymagający złamania wierszy\fmlinebreak tytuł pracy w~języku polskim}
 \englishtitle   {English title}
-\polishabstract {Poniższa praca sprawdza hipotezę, że można nauczyc sieć neuronową rozpoznawać tekst bez 
-korzystania z podpisanych próbek tekstu, a jedynie z rokładów prawdopodobieństw wystąpienia pewnych sekwencji
-liter (n-gramów) w danych uczących.}
+\polishabstract {W poniższej pracy sprawdzamy hipotezę, czy można nauczyć sieć neuronową rozpoznawać
+tekst bez korzystania z podpisanych próbek tekstu, a jedynie z rokładów prawdopodobieństw
+wystąpienia pewnych sekwencji liter (n-gramów) w danych uczących. Implementujemy rozwiązanie 
+zaproponowane przez  Yu Liu, Jianshu Chen oraz Li  Deng  w pracy  “Unsupervised  Sequence  Classification
+using  Sequential  Output Statistics” oraz testujemy je na zbiorze danych MNIST, który jest zbiorem
+danych o dużo mniejszej regularności niż zbiór danych używany przez w cytowanej pracy.
+}
 \englishabstract{Below thesis validates hypothesis whether it is possible to teach a neural network text
-recognition without labeled data, but using sequential output statistics (in form of n-grams) only.}
+recognition without labeled data, but using sequential output statistics (in form of n-grams) only.
+We implement solution proposed by  Yu Liu, Jianshu Chen and Li Deng in paper “Unsupervised  Sequence  Classification using  Sequential  Output Statistics” and we test it on MNIST data set, which is 
+much less regular data set than one used by cited authors.
+}
 % w pracach wielu autorow nazwiska mozna oddzielic poleceniem \and
 \author         {Grzegorz Ciesielski}
 % w przypadku kilku promotorow, lub koniecznosci podania ich afiliacji, linie
 % w ponizszym poleceniu mozna zlamac poleceniem \fmlinebreak
 \advisor        {dr Jan Chorowski}
-%\date          {}                     % Data zlozenia pracy
+\date          {}                     % Data zlozenia pracy
 % Dane do oswiadczenia o autorskim wykonaniu
-%\transcriptnum {}                     % Numer indeksu
-%\advisorgen    {dr. Jana Chorowskiego} % Nazwisko promotora w dopelniaczu
+\transcriptnum {290956}                     % Numer indeksu
+\advisorgen    {dr. Jana Chorowskiego} % Nazwisko promotora w dopelniaczu
 %%%%%
 
 %%%%% WLASNE DODATKOWE PAKIETY
 %
 %\usepackage{graphicx,listings,amsmath,amssymb,amsthm,amsfonts,tikz}
 %
+\usepackage[]{algorithm2e}
 %%%%% WŁASNE DEFINICJE I POLECENIA
 %
 %\theoremstyle{definition} \newtheorem{definition}{Definition}[chapter]
@@ -44,6 +54,8 @@ recognition without labeled data, but using sequential output statistics (in for
 % ...
 %%%%%
 
+\newcommand{\calD}{\mathcal{D}}
+
 \begin{document}
 
 
@@ -53,40 +65,146 @@ recognition without labeled data, but using sequential output statistics (in for
 
 Most machine learning models require two main factors to function: well 
 designed model and (usually a lot of) data. Preparing a model usually does not
-raise problems, as there are a lot of them available online and their perfromance
-usually allows them to learn on semi-advanced, affordable machines. But to do so,
+cause any problems, as there are a lot of them available online and their performance
+allows them to learn on semi-advanced, affordable machines. But to do so,
 we also need a second factor: data. Especially in text recognition 
-it seems that we cannot build a decent model without any labeled samples, and
-gathering such data requires a lot of human effort. Hence in this work we will study 
-possibility of training neural net to recognize written text without labeled data, 
-but only using sequential statistics regarding ouptut, as in~\cite{main_paper}, 
-except that we will use smaller, simpler and higher-variance dataset and more 
-complex model of neural net.
+it seems that we cannot build any decent model without some labeled samples, but
+gathering such data requires a lot of human effort. Yet there is some property of written
+text which we technically could exploit - it is very regular and, from a probabilistic 
+standpoint, quite sparse, as it is difficult to randomly choose a sequence of letters which 
+will create a correct English word (or sequence of words making a valid sentence).
+If we had known that, for example, recognised text is written in Spanish, we could
+take Spanish dictionary (which is easily available) and penalize our model for predicting
+words which does not belong in dictionary, and award it for the opposite. But have access 
+to even more - in web there are available n-gram statistics regarding most languages, which
+are basically dictionaries with given probabilities of sentences (here sentence is a
+sequence of $n$ words). Such approach was proposed by Yu Liu, Jianshu Chen and Li Deng in paper
+``Unsupervised Sequence Classification using Sequential Output Statistics'' \citep{liu2017unsupervised}. 
+In this paper we will study this possibility of training neural classifier to recognize 
+written text without any labeled data, but only using sequential statistics regarding output.
+We will implement and test solution proposed in~\citep{liu2017unsupervised}, 
+except that we will use smaller, maybe simpler and definitely higher-variance data set and more 
+complex model of classifier.
 
 \section{Problem formulation}
 
-As mentioned before, we consider problem of learning text classifier using dataset
+As mentioned before, we consider problem of learning text classifier using data
 consisting pure (not labeled) sequences of data and their output statistics. In 
-language processing obtaining such dataset is considerbaly simpler that labeled data,
+language processing obtaining such data set is considerably simpler that labeled data,
 as it is enough to get images of written text in specific language and for output 
 statistics use easily obtainable n-grams of this language. Specifically: our classifier
 predicts sequences \( (y_1, \dots y_n) \) (labels) from input sequences \( (x_1, \dots x_n) \). The 
-algorithm has access to dataset \( D = \lbrace (x_1^k, \dots x_n^k) : k = 1, \dots M \rbrace \) of
-sequences, and to n-gram probabilities of such dataset - which is denoted as: 
+algorithm we are gonna implement will have access to:
+\begin{enumerate}
+    \item  data set \( \mathcal{D} = \lbrace (x_1^k, \dots x_n^k) : k = 1, \dots M \rbrace \) of
+sequences,
+    \item n-gram probabilities of such data - which are denoted as: 
 \[ p(i_1, \dots i_n) = p(y_1^k = i_1, \dots y_n^k = i_n) \]
-where \( i_1, \dots i_n \in \lbrace 0, 1, \cdots C \rbrace \), and \( y_j^k \) is the label 
+where \( i_1, \dots i_n \in \lbrace 0, 1, \dots C \rbrace \) and \( y_j^k \) is the label 
 of letter \( x_j^k \).
+\end{enumerate}
+
+In Optical Character Recognition $x_j^k$ would be images of letters, $y_j^k$ would be actual labels of
+them, and $p(i_1, \dots i_n)$ would be probability of sequence $i_1, \dots i_n$ occurring in valid
+English sentence.
+
+In this paper and \citep{liu2017unsupervised} we search for sequence classifier in form
+of $p_\theta(y_t^k | x_t^k)$ which computes posterior probability based only on input sample $x_t^k$.
+What will be different than \citep{liu2017unsupervised} is that they used linear classifiers, but here
+we will use neural network with 2 hidden layers (\mbox{LeNet-300-100} architecture 
+\citep{lecun1998gradient}).
+
+
+\chapter{Problem solution}
+
+
+Based on given data, what first comes to mind is to create a model that minimizes negative
+cross entropy between prior distribution and expected n-gram frequencies:
+\begin{equation} \label{cross-entropy}
+    \mathcal{J}(\theta) := - \sum_{i_1, \dots i_n}p(i_1,\dots i_n) \ln \overline{p}_\theta(i_1, \dots i_n)
+\end{equation}
+
+Authors of \citep{liu2017unsupervised} have shown that the expected n-gram frequency $\overline{p}_\theta(i_1, \dots i_n)$
+can be described in terms of $p_\theta(y_t^k = i_k | x_t^k)$ as:
+
+\begin{equation} \label{expected-probability}
+    \overline{p}_\theta(i_1, \dots i_n) = \frac{1}{M}\sum_{k=1}^{M}\prod_{j=1}^{n}p_\theta(y_j^k = i_j | x_j^k)
+\end{equation}
+
+Now it is technically possible to evaluate loss function, but we encounter significant problem during evaluation
+of its derivative - the sample average is inside logarithm. Furthermore, authors of \citep{liu2017unsupervised} 
+noticed that $\mathcal{J}(\theta)$ is highly non-convex and there are high barriers between local optima and
+global minimum. Proposed solution bases on Legendre transformation 
+\citep{nielsen2010legendre, boyd2004convex} which, for convex function $f(u)$ is defined as:
+\begin{equation} \label{legendre-transformation}
+    f^*(v) := \sup_{u}(v^Tu - f(u))
+\end{equation}
+Taking $f(u)=-\ln u$ gives us $f^*(v) = -1 - \ln(-v)$. It holds that $(f^*)^* = f$
+\citep{boyd2004convex}, hence:
+\begin{equation} \label{logarithm-transform}
+    - \ln u = f(u) = \sup_v(uv - f^*(v)) = \max_v(uv + 1 + \ln(-v))
+\end{equation}
+We can now rewrite (\ref{cross-entropy}) by substituting logarithm into (\ref{logarithm-transform}),
+which transforms our minimization problem into min-max problem:
+
+\begin{equation} \label{min-max-definition}
+    \min_\theta \max_{\lbrace v_{i_1, \dots , i_n} < 0 \rbrace} \left\lbrace 
+    \mathcal{L}(\theta, V) := \frac{1}{M} \sum_{k=1}^M L_k(\theta, V) + \sum_{i_1, \dots, i_n} p(i_1, \dots, i_n) \ln(-v_{i_1, \dots, i_n})
+    \right\rbrace 
+\end{equation}
+
+where $V := {v_{i1, \dots i_n}}$ are dual variables and $L_k(\theta, V)$ is the 
+loss function of $k$-th sequence:
+\begin{equation}
+    L_k(\theta, V) := \sum_{i_1,\dots,i_n} p(i_1,\dots,i_n) \cdot v_{i_1,\dots,i_n} \cdot \prod_{j=1}^{n} p_\theta(y^k_j = i_j | x^k_j)
+\end{equation}
+
+Now we have no summation under logarithm, and new dual loss function $L(\theta, V)$ 
+was proven in \citep{liu2017unsupervised} to be smoother and more suitable for
+gradient descent algorithm, but we have to adapt GD to working with two loss functions:
+primal $\mathcal{L}_V^{primal}(\theta) := \mathcal{L}(\theta, V)$ and dual 
+$\mathcal{L}_\theta^{dual}(V) := \mathcal{L}(\theta, V)$ - first being maximized, second 
+minimized.
+\begin{algorithm} \label{spdg}
+ \KwData{$\calD = \lbrace (x_1^k, \dots x_n^k) : k = 1, \dots M \rbrace$ and $p(i_1,\dots i_n)$}
+ Initialize $\theta$ and $V$ \\
+ \While{not converged}{
+ $\mathcal{B} \leftarrow \lbrace x^{k_i}_1, \dots x^{k_i}_n \rbrace _{i=1}^B$ ($B$ sequences
+ sampled randomly from data set $\calD$) \\
+ Compute average of gradients from minibatch:
+ $$\Delta\theta = \frac{1}{B} \sum_{i=1}^{B} \frac{\partial L_{k_i}}{\partial\theta}, \hspace{0.1cm}
+ \Delta V = \frac{1}{B} \sum_{i=1}^{B} \frac{\partial L_{k_i}}{\partial V} + \frac{\partial}{\partial V} \sum_{i_1,\dots i_n} p(i_1, \dots i_n) \ln(-v_{i_1, \dots i_n})
+ $$ \\
+ $\theta \leftarrow \theta - \mu_\theta \Delta \theta$ \\
+ $V \leftarrow V + \mu_V\Delta V$
+ }
+ \caption{Stochastic Primal-Dual Gradient Descent}
+\end{algorithm}
+In \citep{liu2017unsupervised} they proposed an algorithm described below:
 
 
 
-\chapter{Output Distribution Match}
+\chapter{Tests}
+
+\section{Experiment details}
+
+In the tests we implemented the SPDG algorithm (\ref{spdg}) in Python 3.7 with PyTorch 1.1.
+Our model (primal variable) is a neural net with 2 hidden layers (\mbox{LeNet-300-100} architecture
+\citep{lecun1998gradient}) and we worked with MNIST data set \citep{deng2012mnist}.
+We used ADAM optimizer for both primal and dual variables, with learning rates $\mu_\theta=10^{-6}$
+and $\mu_V = 10^{-4}$ respectively. We initialized dual variables uniformly distributed 
+values from interval $(-1, 0)$.
+
+
+\section{1-grams}
+
+Authors of \citep{liu2017unsupervised} mentioned that SPDG algorithm
+would not work properly if applied to 1-grams (Caesar's Cipher). We would
+like to put some effort into understanding why and how it does not work.
 
 %%%%% BIBLIOGRAFIA
 
-\begin{thebibliography}{1}
-\bibitem{main_paper} Yu Liu, Jianshu Chen, Li Deng. ``Unsupervised Sequence Classification using
-Sequential Output Statistics''
-
-\end{thebibliography}
+\bibliographystyle{plainnat}
+\bibliography{lic}
 
 \end{document}
