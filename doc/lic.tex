@@ -44,6 +44,7 @@ much less regular data set than one used by cited authors.
 %\usepackage{graphicx,listings,amsmath,amssymb,amsthm,amsfonts,tikz}
 %
 \usepackage[]{algorithm2e}
+\usepackage{graphicx}
 %%%%% WŁASNE DEFINICJE I POLECENIA
 %
 %\theoremstyle{definition} \newtheorem{definition}{Definition}[chapter]
@@ -195,12 +196,22 @@ We used ADAM optimizer for both primal and dual variables, with learning rates $
 and $\mu_V = 10^{-4}$ respectively. We initialized dual variables uniformly distributed 
 values from interval $(-1, 0)$.
 
-
 \section{1-grams}
 
 Authors of \citep{liu2017unsupervised} mentioned that SPDG algorithm
-would not work properly if applied to 1-grams (Caesar's Cipher). We would
-like to put some effort into understanding why and how it does not work.
+would not work properly if applied to 1-grams (which would be equivalent to 
+deciphering Caesar's Cipher). We would like to put some effort into 
+understanding why and how it does not work, especially because when applied
+it produces very peculiar results.
+
+\begin{figure}
+    \centering
+    \def\svgwidth{\columnwidth}
+    \input{images/t112_data_error.pdf_tex}
+    \caption{Caption}
+    \label{fig:my_label}
+\end{figure}
+
 
 %%%%% BIBLIOGRAFIA
 
