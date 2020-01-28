@@ -1,3 +1,3 @@
-DEVICE = 'cpu'
+DEVICE = 'cuda'
 BATCH_SIZE = 128
 MNIST_LOC = './../../MNIST'

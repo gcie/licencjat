@@ -28,8 +28,8 @@ class Model(nn.Module):
             self.primal = architecture.to(DEVICE)
         self.dual = Ngram(self.ngram.n)
         for idx in self.ngram:
-            # self.dual[idx] = torch.tensor(-1. / self.ngram[idx]).to(DEVICE).requires_grad_()
-            self.dual[idx] = torch.tensor(0.).uniform_(-1, 0).to(DEVICE).requires_grad_()
+            self.dual[idx] = torch.tensor(-1. / self.ngram[idx]).to(DEVICE).requires_grad_()
+            # self.dual[idx] = torch.tensor(0.).uniform_(-1, 0).to(DEVICE).requires_grad_()
         self.to(DEVICE)
         self.init_weights()
 
@@ -42,14 +42,14 @@ class Model(nn.Module):
     def loss(self, output, target):
         return torch.mean(-torch.log(torch.gather(output, 1, target.unsqueeze(1))))
 
-    def loss_primal(self, output, target):
+    def loss_primal(self, output):
         loss = torch.tensor(0, dtype=torch.float32).to(DEVICE)
         for i in self.ngram:
             loss += torch.sum(output[:, np.arange(self.n), i].prod(dim=1) * self.dual[i] * self.ngram[i])
         return loss / BATCH_SIZE
 
-    def loss_dual(self, output, target):
-        loss = self.loss_primal(output, target)
+    def loss_dual(self, output):
+        loss = self.loss_primal(output,)
         for i in self.ngram:
             loss += torch.log(-self.dual[i]) * self.ngram[i]
         return -loss

@@ -17,7 +17,7 @@
 If out_dim = 5, then there are 125 possible combinations of 3-element sequences.
 
 - [ ] **t3**: sparse 3-gram (<=5 entries), out_dim = 4 or 5
-    - [x] **t3-1**: out_dim = 4, ngram {(0, 1, 2): 90%, (1, 2, 3): 10%}
+    - [x] **t3-1**: out_dim = 4, ngram {(0, 1, 2): 90%, (1, 2, 3): 10%} (PRZEROBIĆ t3-1-5!!! loss on test, overfitting)
     - [x] **t3-2**: out_dim = 4, ngram {(0, 1, 2): 60%, (1, 2, 3): 40%} (NOTE: better learning curve than t3-1)
     - [ ] **t3-3**: out_dim = 4, ngram {(0, 1, 2): 95%, (1, 2, 3): 5%}
     - [x] **t3-4**: out_dim = 5, ngram {(0, 1, 2): 80%, (1, 2, 3): 10%, (2, 3, 4): 10%}
@@ -42,7 +42,36 @@ If out_dim = 5, then there are 125 possible combinations of 3-element sequences.
 
 ## 7-grams (out dim = 10)
 
-- [ ] **t7-1** randomized, 3 entries, 
+- [ ] **t7-1**: randomized, 3 entries
+- [ ] **t7-2**: randomized, 5 entries, 0.02 minimum ngram variance
+
+## 10-gram
+
+- [ ] **t10-1**: 1 entry
+
+## Brown n-gram based tests
+
+- [ ] **tb3-1**: 2000 sequences of length 30, generated from brown 3-gram with mapping a->0, e->1, y->2, u->3, i->4, o->5. Model has access only to original n-gram.
+- [ ] **tb3-2**: 2000 sequences of length 30, generated from brown 3-gram with mapping a->0, e->1, y->2, u->3, i->4, o->5. Model has access only to post-generation n-gram.
+- [x] **tb3-3-1**: 2000 sequences of length 30 (n=3, dim=3, 'aey', post-ngram) generated from brown 3-gram with mapping a->0, e->1, y->2. Model has access only to post-generation n-gram.
+- [x] **tb3-3-2**: 2000 sequences of length 30, generated from brown 3-gram with mapping a->0, e->1, y->2. Model has access only to post-generation n-gram. USE LARGER MINIBATCHES
+- [ ] **tb3-4-1**: 2000 sequences of length 30 (n=3, dim=4, mbs=1024, 'etao', orig-ngram)
+- [x] **tb3-4-2**: 2000 sequences of length 30 (n=3, dim=4, mbs=1024, 'etao', post-ngram) 
+- [x] **tb3-5-1**: 5000 sequences of length 30 (n=3, dim=5, mbs=1024, 'etaoi', ???)
+- [x] **tb4-1-1**: 2000 sequences of length 30 (n=4, dim=3, mbs=1024, 'etaoi', post-ngram)
+
+## Brown sequence based tests
+
+- [x] **tbs3-3-1**: sequence of length 100000 (n=3, dim=3, mbs=1024, 'eta', full ngram) (dzieją się dziwne wahania po 250 epokach)
+- [x] **tbs3-3-2**: sequence of length 100000 (n=3, dim=3, mbs=1024, 'eta', post ngram) 
+- [x] **tbs3-4-1**: sequence of length 100000 (n=3, dim=4, mbs=1024, 'etao', full ngram)
+- [x] **tbs3-4-2**: sequence of length 100000 (n=3, dim=4, mbs=1024, 'etao', post ngram)
+- [x] **tbs3-5-1**: sequence of length 100000 (n=3, dim=5, mbs=1024, 'etaoi', full ngram)
+- [ ] **tbs3-5-2**: sequence of length 100000 (n=3, dim=5, mbs=1024, 'etaoi', post ngram)
+- [x] **tbs3-6-1**: sequence of length 100000 (n=3, dim=6, mbs=1024, 'etaoin', full ngram)
+- [x] **tbs3-6-2**: sequence of length 100000 (n=3, dim=6, mbs=1024, 'etaoin', post ngram)
+- [ ] **tbs3-7-2**: sequence of length 100000 (n=3, dim=7, mbs=1024, 'etaoins', post ngram)
+- [ ] **tbs3-8-2**: sequence of length 100000 (n=3, dim=8, mbs=1024, 'etaoinsr', post ngram)
 
 # Conclusions
 

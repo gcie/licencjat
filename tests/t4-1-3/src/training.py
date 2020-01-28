@@ -3,7 +3,8 @@ import time
 import torch
 
 from config import DEVICE
-from src.statistics import get_statistics
+from src.history import History
+from src.statistics import get_ngram_stats, get_statistics
 
 
 def SGD(model, optimizer, data_loader, test_loader, num_epochs=5, log_every=1, test_every=1, c=10,
@@ -50,10 +51,10 @@ def SGD(model, optimizer, data_loader, test_loader, num_epochs=5, log_every=1, t
 
 
 def SPDG(model, optimizer_primal, optimizer_dual, sequence_loader, data_loader, test_loader, num_epochs=5, log_every=1, test_every=1,
-         eval_predictions_on_data=False, show_dual=False, history=None):
+         predictions_on_data=False, predictions_on_sequences=False, show_dual=False, history=None, sequence_test_loader=None,
+         ngram_data_stats=False, ngram_test_stats=False, loss_on_test=False):
     if history is None:
-        history = dict(err_rate=[], ploss=[], loss=[], test_err_rate=[], dual=[], 
-                       predictions=[], predictions_data=[])
+        history = History()
         for idx in model.dual:
             history['dual ' + str(idx)] = []
     model.train()
@@ -75,8 +76,8 @@ def SPDG(model, optimizer_primal, optimizer_dual, sequence_loader, data_loader, 
                 x = x.to(DEVICE).view(-1, model.n, 28*28).float()
                 y = y.to(DEVICE)
                 out = model.forward_sequences(x)
-                ploss = model.loss_primal(out, y)
-                dloss = model.loss_dual(out, y)
+                ploss = model.loss_primal(out)
+                dloss = model.loss_dual(out)
                 ploss_ = ploss.item()
                 loss_ = -dloss.item()
 
@@ -92,9 +93,9 @@ def SPDG(model, optimizer_primal, optimizer_dual, sequence_loader, data_loader, 
                     _, predictions = out.max(dim=2)
                     a = predictions.view(-1) != y.view(-1)
                     err_rate = 100.0 * a.sum().item() / (out.size(1) * out.size(0))
-                    history['err_rate'].append(err_rate)
-                    history['ploss'].append(ploss_)
-                    history['loss'].append(loss_)
+                    history.err_rate.append(err_rate)
+                    history.primal_loss.append(ploss_)
+                    history.loss.append(loss_)
                     for idx in model.dual:
                         history['dual ' + str(idx)].append(model.dual[idx].item())
 
@@ -109,17 +110,39 @@ def SPDG(model, optimizer_primal, optimizer_dual, sequence_loader, data_loader, 
                         siter = iter_
                         stime = time.time()
             if epoch_ % test_every == 0:
-                epmsg = "Epoch {:>3} | Test errors for: ".format(epoch_)
-                history['predictions'].append(get_statistics(model, data_loader=test_loader))
+                epmsg = "Epoch {:>3} | Test errors for: ".format(epoch_ + history.epochs_done)
+                history.predictions_test.append(get_statistics(model, data_loader=test_loader))
                 for i in range(model.output_size):
-                    accuracy = 100.0 - 100.0 * history['predictions'][-1][i, i] / history['predictions'][-1][i].sum()
+                    accuracy = 100.0 - 100.0 * history.predictions_test[-1][i, i] / history.predictions_test[-1][i].sum()
                     epmsg += " {}: {:.2f}, ".format(i, accuracy)
                 epmsg = epmsg[:-2]
-                if eval_predictions_on_data:
-                    history['predictions_data'].append(get_statistics(model, data_loader=data_loader))
-                test_err_rate = model.compute_error_rate(test_loader)
-                history['test_err_rate'].append(test_err_rate)
+                if predictions_on_data:
+                    epmsg += "\n          | Data errors for: ".format(epoch_)
+                    history.predictions_data.append(get_statistics(model, data_loader=data_loader))
+                    for i in range(model.output_size):
+                        accuracy = 100.0 - 100.0 * history.predictions_data[-1][i, i] / history.predictions_data[-1][i].sum()
+                        epmsg += " {}: {:.2f}, ".format(i, accuracy)
+                    epmsg = epmsg[:-2]
+                if predictions_on_sequences:
+                    epmsg += "\n          | Seqs errors for: ".format(epoch_)
+                    history.predictions_sequences.append(get_statistics(model, data_loader=sequence_loader, sequences=True))
+                    for i in range(model.output_size):
+                        accuracy = 100.0 - 100.0 * history.predictions_sequences[-1][i, i] / history.predictions_sequences[-1][i].sum()
+                        epmsg += " {}: {:.2f}, ".format(i, accuracy)
+                    epmsg = epmsg[:-2]
+                if ngram_data_stats:
+                    history.ngram_data_stats.append(get_ngram_stats(model, sequence_loader))
+                if ngram_test_stats:
+                    history.ngram_test_stats.append(get_ngram_stats(model, sequence_test_loader))
+                if loss_on_test:
+                    for x, y in sequence_test_loader:
+                        with torch.no_grad():
+                            x = x.to(DEVICE).view(-1, model.n, 28*28).float()
+                            out = model.forward_sequences(x)
+                            history.test_primal_loss.append(model.loss_primal(out).item())
+                            history.test_loss.append(-model.loss_dual(out).item())
                 print('{0}+\n{1}\n{0}+'.format('-' * (len(msg) - 1), epmsg))
     except KeyboardInterrupt:
         pass
+    history.epochs_done += num_epochs
     return history

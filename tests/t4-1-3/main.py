@@ -1,22 +1,27 @@
 # %% IMPORTS
-import numpy as np
-import torch
 import argparse
 import os
+from collections import defaultdict
+
+import matplotlib as mpl
+mpl.use('agg')
+import matplotlib.pyplot as plt
+import numpy as np
+import torch
 
 from config import DEVICE
 from src.data_processing import (Ngram, randomized_ngram,
                                  sequence_loader_MNIST, test_loader_MNIST,
                                  train_loader_MNIST)
+from src.history import History
 from src.model import Model
-from src.remote import mpl
-from src.training import SGD, SPDG
+# from src.remote import mpl
 from src.statistics import get_statistics
-import matplotlib.pyplot as plt
+from src.training import SGD, SPDG
 
-torch.manual_seed(817133532)
-np.random.seed(470958802)
 
+torch.manual_seed(795679523)
+np.random.seed(91055855)
 
 def save(history, model, ngram, optimizer_primal, optimizer_dual, primal_lr, dual_lr, comment=''):
     if not os.path.exists('data'):
@@ -42,38 +47,35 @@ def load():
     return hist, model, ngram, opt_primal, opt_dual
 
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--cont", action="store_true")
-    parser.add_argument("--epochs", default=1000, type=int)
-    parser.add_argument("--save-every", default=100, type=int)
-    parser.add_argument("--log-every", default=100, type=int)
-    parser.add_argument("--test-every", default=5, type=int)
-    parser.add_argument("--primal-lr", default=1e-6, type=float)
-    parser.add_argument("--dual-lr", default=1e-4, type=float)
-    args = parser.parse_args()
-    continuation = args.cont
-    num_epochs = args.epochs
-    save_every = args.save_every
-    log_every = args.log_every
-    test_every = args.test_every
-    primal_lr = args.primal_lr
-    dual_lr = args.dual_lr
-else:
-    continuation = False
-    num_epochs = 1000
-    save_every = 100
-    log_every = 100
-    test_every = 5
-    primal_lr = 1e-6
-    dual_lr = 1e-4
+continuation = False
+num_epochs = 500
+save_every = 100
+log_every = 100
+test_every = 2
+primal_lr = 1e-6
+dual_lr = 1e-4
+
+show_dual = False
+predictions_on_sequences = True
+predictions_on_data = False
+ngram_data_stats = False
+ngram_test_stats = True
+loss_on_test = False
+
+# %% CREATING NGRAM
+ngram = randomized_ngram(3, 10, out_dim=5, min_var=1e-2)
+# ngram = Ngram(3)
+# ngram[(0, 1, 2)] = 9.
+# ngram[(1, 2, 3)] = 1.
+# ngram.norm()
+ngram.show()
 
 # %% GENERATING DATASET
-ngram = randomized_ngram(3, 10, out_dim=5)
-
 data_loader = train_loader_MNIST()
 test_loader = test_loader_MNIST()
-sequence_loader = sequence_loader_MNIST(ngram, num_samples=40000)
+sequence_loader = sequence_loader_MNIST(ngram, num_samples=50000)
+sequence_test_loader = sequence_loader_MNIST(ngram, num_samples=10000)
+
 
 # %% REGULAR TRAINING (SGD)
 # model = Model(ngram)
@@ -95,58 +97,43 @@ else:
     optimizer_primal = torch.optim.Adam(model.primal.parameters(), lr=primal_lr)
     optimizer_dual = torch.optim.Adam(model.dual.parameters(), lr=dual_lr)
 
-    history = dict(err_rate=[], ploss=[], loss=[], test_err_rate=[], dual=[], 
-                   predictions=[], predictions_data=[])
+    history = History()
     for idx in model.dual:
         history['dual ' + str(idx)] = []
 
 
 epochs_done = 0
 while epochs_done < num_epochs:
-    history = SPDG(model, optimizer_primal, optimizer_dual, sequence_loader,
+    history = SPDG(model, optimizer_primal, optimizer_dual, 
+                    sequence_loader,
                    data_loader, test_loader, save_every, log_every,
-                   test_every, eval_predictions_on_data=True, show_dual=False, history=history)
+                   test_every,
+                   sequence_test_loader=sequence_test_loader, predictions_on_data=predictions_on_data,
+                    show_dual=show_dual, predictions_on_sequences=predictions_on_sequences,
+                    ngram_data_stats=ngram_data_stats, ngram_test_stats=ngram_test_stats, loss_on_test=loss_on_test,
+                   history=history)
     save(history, model, ngram, optimizer_primal, optimizer_dual, primal_lr, dual_lr)
     epochs_done += save_every
 
 
-# %% PLOTTING TEST
+# %% PLOTTING 
 
-xs = np.arange(len(history['predictions'])) * test_every
-ys = [[100.0 - preds[i, i] / preds[i].sum() * 100 for preds in history['predictions']] for i in range(model.output_size)]
-mpl.rc('savefig', format='svg')
-mpl.rc('lines', linewidth=0.5)
-mpl.style.use('seaborn')
-for i in range(model.output_size):
-    plt.plot(xs, ys[i], label=str(i))
-plt.legend()
-plt.xlabel('Epoch')
-plt.ylabel('Error (%)')
-plt.savefig("predictions_test_error")
-plt.close()
+def plot(predictions, label):
+    xs = np.arange(len(predictions)) * test_every
+    ys = [[100.0 - preds[i, i] / preds[i].sum() * 100 for preds in predictions] for i in range(model.output_size)]
+    mpl.rc('savefig', format='svg')
+    mpl.rc('lines', linewidth=0.5)
+    mpl.style.use('seaborn')
+    for i in range(model.output_size):
+        plt.plot(xs, ys[i], label=str(i))
+    plt.legend()
+    plt.xlabel('Epoch')
+    plt.ylabel('Error (%)')
+    plt.savefig(f"predictions_{label}_error")
+    plt.close()
 
-# %% PLOTTING DATA
-
-ys = [[100.0 - preds[i, i] / preds[i].sum() * 100 for preds in history['predictions_data']] for i in range(model.output_size)]
-mpl.rc('savefig', format='svg')
-mpl.rc('lines', linewidth=0.5)
-mpl.style.use('seaborn')
-for i in range(model.output_size):
-    plt.plot(xs, ys[i], label=str(i))
-plt.legend()
-plt.xlabel('Epoch')
-plt.ylabel('Error (%)')
-plt.savefig("predictions_data_error")
-plt.close()
-
-# %% STATISTICS
-stats = history['predictions'][-1]
-print(stats)
-print("\nn | acc\n--+------")
-for i, x in zip(range(10), np.pad(np.diag(stats), (0, 10 - model.output_size), 'constant') / stats.sum(axis=1) * 100.0):
-    print("{} | {:>5.2f}".format(i, x))
-
-# %% RESTORE
-
-fname = 't4-1-3'
-history = np.load(fname + '_hist.npy').item()
+plot(history.predictions_test, 'test')
+if predictions_on_data:
+    plot(history.predictions_data, 'data')
+if predictions_on_sequences:
+    plot(history.predictions_sequences, 'sequences')

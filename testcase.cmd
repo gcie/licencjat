@@ -6,7 +6,7 @@ if "%3"=="" (
     set HOST="i290956@%3.stud.ii"
 )
 
-if not "%2"=="sync" (
+if "%2"=="create" (
     mkdir "tests/%1"
     cp -r src "tests/%1"
 
@@ -20,12 +20,12 @@ if not "%2"=="sync" (
     powershell -Command "(gc tests/%1/main.py) -replace 'main_test', '%1' | Out-File -encoding ASCII tests/%1/main.py"
 )
 
-
 if "%2"=="remote" (
     powershell -Command "(gc tests/%1/src/remote.py) -replace 'remote = False', 'remote = True' | Out-File -encoding ASCII tests/%1/src/remote.py"
     ssh "%HOST%" "mkdir ~/licencjat/%1"
     scp -r "tests/%1" "%HOST%:~/licencjat"
 )
+
 if "%2"=="sync" (
     scp -r "%HOST%:~/licencjat/%1" "tests"
 )

@@ -9,4 +9,7 @@ dataset/
 __pycache__
 
 # other
+tmp/
 tmp.py
+data**/
+**.npy
