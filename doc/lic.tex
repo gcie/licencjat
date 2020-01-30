@@ -2,8 +2,9 @@
 % ustawia sie przede wszystkim jezyk i rodzaj (lic/inz/mgr) pracy, oraz czy na
 % drugiej stronie pracy ma byc skladany wzor oswiadczenia o autorskim wykonaniu.
 % \documentclass[declaration,shortabstract]{iithesis}
-\documentclass[shortabstract]{iithesis}
+\documentclass[shortabstract,lic,english]{iithesis}
 
+\usepackage{natbib}
 \usepackage[utf8]{inputenc}
 
 %%%%% DANE DO STRONY TYTUŁOWEJ
@@ -12,37 +13,37 @@
 % Pamietaj o madrym (zgodnym z logicznym rozbiorem zdania oraz estetyka) recznym
 % zlamaniu wierszy w temacie pracy, zwlaszcza tego w jezyku pracy. Uzyj do tego
 % polecenia \fmlinebreak.
+
 \polishtitle    {Wymagający złamania wierszy\fmlinebreak tytuł pracy w~języku polskim}
 \englishtitle   {English title}
-\polishabstract {Poniższa praca sprawdza hipotezę, że można nauczyc sieć neuronową rozpoznawać tekst bez 
-korzystania z podpisanych próbek tekstu, a jedynie z rokładów prawdopodobieństw wystąpienia pewnych sekwencji
-liter (n-gramów) w danych uczących.}
-\englishabstract{Below thesis validates hypothesis whether it is possible to teach a neural network text
-recognition without labeled data, but using sequential output statistics (in form of n-grams) only.}
-% w pracach wielu autorow nazwiska mozna oddzielic poleceniem \and
+\polishabstract {W poniższej pracy sprawdzamy hipotezę, czy można nauczyć sieć neuronową rozpoznawać tekst bez korzystania z podpisanych próbek tekstu, a jedynie z rokładów prawdopodobieństw wystąpienia pewnych sekwencji liter (n-gramów) w danych uczących. Implementujemy rozwiązanie zaproponowane przez  Yu Liu, Jianshu Chen oraz Li  Deng  w pracy  “Unsupervised  Sequence Classification using Sequential Output Statistics” oraz testujemy je na zbiorze danych MNIST, który jest zbiorem danych o dużo mniejszej regularności niż zbiór danych używany przez w cytowanej pracy. Wkładamy również wysiłek w próbę zrozumienia zasad działania algorytmu przez wiele różnych przypadków testowych (innych od przedstawionych w cytowanej pracy) oraz przez użycie bardziej skomplikowanego modelu sieci neuronowej.
+}
+\englishabstract{Below thesis validates hypothesis whether it is possible to teach a neural network text recognition without labeled data, but using sequential output statistics (in form of n-grams) only. We implement solution proposed by  Yu Liu, Jianshu Chen and Li Deng in paper “Unsupervised Sequence  Classification using  Sequential  Output Statistics” and we test it on on MNIST data set, which is much less regular data set than one used by cited authors. We also put effort into understanding algorithm's effects through multiple different test cases (different than those in cited paper) and we try to use more complex neural net model.}
+
 \author         {Grzegorz Ciesielski}
 % w przypadku kilku promotorow, lub koniecznosci podania ich afiliacji, linie
 % w ponizszym poleceniu mozna zlamac poleceniem \fmlinebreak
 \advisor        {dr Jan Chorowski}
-%\date          {}                     % Data zlozenia pracy
-% Dane do oswiadczenia o autorskim wykonaniu
-%\transcriptnum {}                     % Numer indeksu
-%\advisorgen    {dr. Jana Chorowskiego} % Nazwisko promotora w dopelniaczu
+\date          {}                     % Data zlozenia pracy
+
+\transcriptnum {290956}
+\advisorgen    {dr. Jana Chorowskiego}
 %%%%%
 
 %%%%% WLASNE DODATKOWE PAKIETY
 %
 %\usepackage{graphicx,listings,amsmath,amssymb,amsthm,amsfonts,tikz}
 %
+\usepackage[]{algorithm2e}
+\usepackage{graphicx,amsmath,subcaption,multirow}
+
 %%%%% WŁASNE DEFINICJE I POLECENIA
-%
-%\theoremstyle{definition} \newtheorem{definition}{Definition}[chapter]
-%\theoremstyle{remark} \newtheorem{remark}[definition]{Observation}
-%\theoremstyle{plain} \newtheorem{theorem}[definition]{Theorem}
-%\theoremstyle{plain} \newtheorem{lemma}[definition]{Lemma}
-%\renewcommand \qedsymbol {\ensuremath{\square}}
-% ...
-%%%%%
+
+\newcommand{\calD}{\mathcal{D}}
+\makeatletter
+\newcommand{\pushright}[1]{\ifmeasuring@#1\else\omit\hfill$\displaystyle#1$\fi\ignorespaces}
+\newcommand{\pushleft}[1]{\ifmeasuring@#1\else\omit$\displaystyle#1$\hfill\fi\ignorespaces}
+\makeatother
 
 \begin{document}
 
@@ -51,42 +52,362 @@ recognition without labeled data, but using sequential output statistics (in for
 
 \chapter{Introduction}
 
-Most machine learning models require two main factors to function: well 
-designed model and (usually a lot of) data. Preparing a model usually does not
-raise problems, as there are a lot of them available online and their perfromance
-usually allows them to learn on semi-advanced, affordable machines. But to do so,
-we also need a second factor: data. Especially in text recognition 
-it seems that we cannot build a decent model without any labeled samples, and
-gathering such data requires a lot of human effort. Hence in this work we will study 
-possibility of training neural net to recognize written text without labeled data, 
-but only using sequential statistics regarding ouptut, as in~\cite{main_paper}, 
-except that we will use smaller, simpler and higher-variance dataset and more 
-complex model of neural net.
+Most machine learning models require two main factors to function: well designed model and (usually a lot of) data. Preparing a model usually does not cause any problems, as there are a lot of them available online and their performance allows them to learn on semi-advanced, affordable machines. But to do so, we also need a second factor: data. Especially in text recognition it seems that we cannot build any decent model without some labeled samples, but gathering such data requires a lot of human effort. Yet there is some property of written text which we technically could exploit - it is very regular and, from a probabilistic standpoint, quite sparse, as it is difficult to randomly choose a sequence of letters which will create a correct English word (or sequence of words making a valid sentence). If we had known that, for example, recognised text is written in Spanish, we could take Spanish dictionary (which is easily available) and penalize our model for predicting words that does not belong in dictionary, and award it for the opposite. But have access to even more - in web there are available n-gram statistics regarding most languages, which are basically dictionaries with given probabilities of sentences (here sentence is a sequence of $n$ words). Such approach was proposed by Yu Liu, Jianshu Chen and Li Deng in paper ``Unsupervised Sequence Classification using Sequential Output Statistics'' \citep{liu2017unsupervised}. In this paper we will study this possibility of training neural classifier to recognize written text without any labeled data, but only using sequential statistics regarding output. We will implement and test solution proposed in~\citep{liu2017unsupervised}, except that we will use smaller, maybe simpler and definitely higher-variance data set and more complex model of classifier.
 
 \section{Problem formulation}
 
-As mentioned before, we consider problem of learning text classifier using dataset
-consisting pure (not labeled) sequences of data and their output statistics. In 
-language processing obtaining such dataset is considerbaly simpler that labeled data,
-as it is enough to get images of written text in specific language and for output 
-statistics use easily obtainable n-grams of this language. Specifically: our classifier
-predicts sequences \( (y_1, \dots y_n) \) (labels) from input sequences \( (x_1, \dots x_n) \). The 
-algorithm has access to dataset \( D = \lbrace (x_1^k, \dots x_n^k) : k = 1, \dots M \rbrace \) of
-sequences, and to n-gram probabilities of such dataset - which is denoted as: 
+As mentioned before, we consider problem of learning text classifier using data consisting pure (not labeled) sequences of data and their output statistics. In language processing obtaining such data set is considerably simpler that labeled data, as it is enough to get images of written text in specific language and for output statistics use easily obtainable n-grams of this language. Specifically: our classifier predicts sequences \( (y_1, \dots y_n) \) (labels) from input sequences \( (x_1, \dots x_n) \). The  algorithm we are gonna implement will have access to:
+\begin{enumerate}
+    \item  data set \( \mathcal{D} = \lbrace (x_1^k, \dots x_n^k) : k = 1, \dots M \rbrace \) of sequences,
+    \item n-gram probabilities of such data - which are denoted as: 
 \[ p(i_1, \dots i_n) = p(y_1^k = i_1, \dots y_n^k = i_n) \]
-where \( i_1, \dots i_n \in \lbrace 0, 1, \cdots C \rbrace \), and \( y_j^k \) is the label 
-of letter \( x_j^k \).
+where \( i_1, \dots i_n \in \lbrace 0, 1, \dots C \rbrace \) and \( y_j^k \) is the label of letter \( x_j^k \).
+\end{enumerate}
+
+In Optical Character Recognition task, $x_j^k$ would be images of letters, $y_j^k$ would be actual labels of them, and $p(i_1, \dots i_n)$ would be probability of sequence $i_1, \dots i_n$ occurring in valid English sentence.
+
+In this paper and \citep{liu2017unsupervised} we search for sequence classifier in form of $p_\theta(y_t^k | x_t^k)$ which computes posterior probability based only on input sample $x_t^k$. What will be different than \citep{liu2017unsupervised} is that they used linear classifiers, but here we will use neural network with 2 hidden layers (\mbox{LeNet-300-100} architecture \citep{lecun1998gradient}) and data set containing more diversified samples.
+
+\chapter{Problem solution}
+
+
+Based on given data, what first comes to mind is to create a model that minimizes negative cross entropy between prior distribution and expected n-gram frequencies:
+\begin{equation} \label{cross-entropy}
+    \mathcal{J}(\theta) := - \sum_{i_1, \dots i_n}p(i_1,\dots i_n) \ln \overline{p}_\theta(i_1, \dots i_n)
+\end{equation}
+
+Authors of \citep{liu2017unsupervised} have shown that the expected n-gram frequency $\overline{p}_\theta(i_1, \dots i_n)$ can be described in terms of $p_\theta(y_t^k = i_k | x_t^k)$ as:
+
+\begin{equation} \label{expected-probability}
+    \overline{p}_\theta(i_1, \dots i_n) = \frac{1}{M}\sum_{k=1}^{M}\prod_{j=1}^{n}p_\theta(y_j^k = i_j | x_j^k)
+\end{equation}
+
+Now it is technically possible to evaluate loss function, but we encounter significant problem during evaluation of its derivative - the sample average is inside logarithm. Furthermore, authors of \citep{liu2017unsupervised} noticed that $\mathcal{J}(\theta)$ is highly non-convex and there are high barriers between local optima and global minimum. Proposed solution bases on Legendre transformation  \citep{nielsen2010legendre, boyd2004convex} which, for convex function $f(u)$ is defined as:
+\begin{equation} \label{legendre-transformation}
+    f^*(v) := \sup_{u}(v^Tu - f(u))
+\end{equation}
+Taking $f(u)=-\ln u$ gives us $f^*(v) = -1 - \ln(-v)$. It holds that $(f^*)^* = f$ \citep{boyd2004convex}, hence:
+\begin{equation} \label{logarithm-transform}
+    - \ln u = f(u) = \sup_v(uv - f^*(v)) = \max_v(uv + 1 + \ln(-v))
+\end{equation}
+We can now rewrite (\ref{cross-entropy}) by substituting logarithm into (\ref{logarithm-transform}), which transforms our minimization problem into min-max problem:
+
+\begin{equation} \label{min-max-definition}
+    \min_\theta \max_{\lbrace v_{i_1, \dots , i_n} < 0 \rbrace} \left\lbrace 
+    \mathcal{L}(\theta, V) := \frac{1}{M} \sum_{k=1}^M L_k(\theta, V) + \sum_{i_1, \dots, i_n} p(i_1, \dots, i_n) \ln(-v_{i_1, \dots, i_n})
+    \right\rbrace 
+\end{equation}
+
+where $V := {v_{i_1, \dots i_n}}$ are dual variables and $L_k(\theta, V)$ is the loss function of $k$-th sequence:
+\begin{equation}
+    L_k(\theta, V) := \sum_{i_1,\dots,i_n} p(i_1,\dots,i_n) \cdot v_{i_1,\dots,i_n} \cdot \prod_{j=1}^{n} p_\theta(y^k_j = i_j | x^k_j)
+\end{equation}
+
+Now we have no summation under logarithm, and new dual loss function $L(\theta, V)$ was proven in \citep{liu2017unsupervised} to be smoother and more suitable for gradient descent algorithm, but we have to adapt GD to working with two loss functions: primal $\mathcal{L}_V^{primal}(\theta) := \mathcal{L}(\theta, V)$ and dual $\mathcal{L}_\theta^{dual}(V) := \mathcal{L}(\theta, V)$ - first being maximized, second minimized. In \citep{liu2017unsupervised} they proposed an algorithm described below:
+
+\begin{algorithm} 
+ \KwData{$\calD = \lbrace (x_1^k, \dots x_n^k) : k = 1, \dots M \rbrace$ and $p(i_1,\dots i_n)$}
+ Initialize $\theta$ and $V$ \\
+ \While{not converged}{
+ $\mathcal{B} \leftarrow \lbrace x^{k_i}_1, \dots x^{k_i}_n \rbrace _{i=1}^B$ ($B$ sequences
+ sampled randomly from data set $\calD$) \\
+ Compute average of gradients from minibatch:
+ $$\Delta\theta = \frac{1}{B} \sum_{i=1}^{B} \frac{\partial L_{k_i}}{\partial\theta}, \hspace{0.1cm}
+ \Delta V = \frac{1}{B} \sum_{i=1}^{B} \frac{\partial L_{k_i}}{\partial V} + \frac{\partial}{\partial V} \sum_{i_1,\dots i_n} p(i_1, \dots i_n) \ln(-v_{i_1, \dots i_n})
+ $$ \\
+ $\theta \leftarrow \theta - \mu_\theta \Delta \theta$ \\
+ $V \leftarrow V + \mu_V\Delta V$
+ }
+ \caption{Stochastic Primal-Dual Gradient Descent}
+\label{spdg}
+\end{algorithm}
+
+
+\chapter{Tests}
+
+\section{Experiment details}
+
+In the tests we implemented the SPDG algorithm (\ref{spdg}) in Python 3.7 with PyTorch 1.1. Our model (primal variable) is a neural net with 2 hidden layers (\mbox{LeNet-300-100} architecture \citep{lecun1998gradient}, which is different that architecture used in \ref{spdg} - they used only linear classifiers and mentioned that algorithm will not be suitable for more complex architectures) and SoftMax output. We worked with MNIST data set \citep{mnist} - grayscale $28 \times 28$ images of digits, transformed into $n \times 28 \times 28$ sequences gathered into minibatches containing 128 sequences each (during tests on Brown Corpus in Section~\ref{section:real_life} we increased this size to 1024). We used ADAM optimizer for both primal and dual variables, with learning rates $\mu_\theta=10^{-6}$ and $\mu_V = 10^{-4}$ respectively. We initialized dual variables with uniformly distributed values from interval $(-1, 0)$.
+
+Due to algorithms unpredictability and heavy dependence on initialization of variables (mainly holding for dual variables), we decided to show only single runs (not average of some trials) on diagrams, as they were very difficult to average - but we will note whether other runs were similar or not. All experiments and diagrams can be viewed at our repository at github.
+
+\section{Unigrams}
+
+\begin{figure}[htb]
+    \def\svgwidth{\columnwidth}
+    \input{images/t112_test_error.pdf_tex}
+    \caption{Test error on 1-grams (test case 1.1.2a). Data set contained only zeros and ones, with proportions 9:1 noted in n-gram.
+    This is only one run of algorithm, but other runs yielded very similar results (but difficult to average).}
+    \label{fig:t112_error}
+\end{figure}
+
+
+Authors of \citep{liu2017unsupervised} mentioned that SPDG algorithm would not work properly if applied to 1-grams (which would be equivalent to deciphering Caesar's Cipher). We would like to put some effort into understanding why and how it does not work, especially because when applied it produces very peculiar results, as shown at figure \ref{fig:t112_error}.
+
+We can note from diagram that model does not seem to learn at all from the beginning, it stays right about the same for 500 epochs, and then it 'crashes', causing errors to change drastically during one epoch every ~20 epochs or so. What happens? Let us take a closer look at our loss function (simplified for our case):
+
+\newcommand{\sumxinB}{\sum_{x \in \mathcal{B}}}
+\newcommand{\bpmean}{p_\theta^\mathcal{B}}
+\begin{align} 
+\mathcal{L}^\mathcal{B}(\theta, V) &= \frac{1}{B}\left(\sumxinB p(0)\cdot v_0\cdot p_{\theta}(y=0 | x) + \sumxinB p(1)\cdot v_1\cdot p_{\theta}(y=1 | x)\right)\\ 
+& \pushright{+p(0)\cdot\ln(-v_0) + p(1)\cdot\ln(-v_1)=} \\
+&= p(0) \cdot\left(\bpmean(0)\cdot v_0+\ln(-v_0)\right) + p(1)\cdot\left(\bpmean(1) \cdot v_1+\ln(-v_1) \right)
+\end{align}
+
+Here (and below) $\bpmean(i) = \frac{1}{B}\sumxinB p_\theta(y=i | x)$ is the mean posterior probability of $i$.
+
+In algorithm we used primal learning rate of $\mu_\theta=10^{-6}$, while dual learning rate was 100 times higher at $\mu_V = 10^{-4}$ - it was for dual variables to adjust to posterior distribution. So at the beginning we can assume that $\bpmean$ is roughly constant through all minibatches. Hence our algorithm starts with maximizing $\mathcal{L}(\theta, V)$ with respect to dual variables $V$ (where every $v_i \in V$ is from interval $(-\infty, 0)$). We can note that:
+
+\begin{align}
+    \lim_{v_i\rightarrow 0} \mathcal{L}(\theta, V) &= \lim_{v_i \rightarrow 0} (p_\theta(i) \cdot v_i + \ln (- v_i)) = -\infty \\
+    \lim_{v_i\rightarrow-\infty} \mathcal{L}(\theta, V) &= \lim_{v_i \rightarrow -\infty} (p_\theta(i) \cdot v_i + \ln (- v_i)) = -\infty
+\end{align}
+
+Hence its maximum is where gradient nullifies. Differentiating over $v_i$:
+
+\newcommand{\sumxinD}{\sum_{x \in \mathcal{D}}}
+\begin{align}
+    \frac{\partial\mathcal{L}}{\partial v_i}(\theta, V) = \frac{\partial}{\partial v_i} (p(i) \cdot (p_\theta(i) \cdot v_i + \ln(-v_i))) = 
+    p(i) \cdot (p_\theta(i) + \frac{1}{v_i})
+\end{align}
+
+\begin{figure}[tb]
+    \def\svgwidth{\columnwidth}
+    \input{images/t112_dual.pdf_tex}
+    \caption{Dual variables (test case 1.1.2a).}
+    \label{fig:t112_dual}
+\end{figure}
+
+
+It is equal zero at $(v_0, v_1) = (-p_\theta(0)^{-1}, -p_\theta(1)^{-1})$. As we see on figure \ref{fig:t112_dual}, optimal $v_0$ is reached after circa 50 epochs. After that we noticed that model locked himself from learning zeroes completely, it was only fortifying his current knowledge - adjusting primal variables to output higher values approaching infinity and causing numerical problems with softmax and gradient evaluation, which resulted in this strange behaviour of large error jumps when variables overflow.
+
+\paragraph{Conclusions.} In the case of unigrams SPDG algorithm will not achieve decent accuracy. Its behaviour can be described as follows:
+\begin{enumerate}
+    \item Sample primal and dual variables, producing some posterior (random) distribution;
+    \item Adjust dual variables to match this distribution;
+    \item Increase confidence to infinity.
+\end{enumerate}
+
+Problem with overflow could easily be avoided by putting some constraints on model's parameters or simple detection whether model produces high enough values right before applying softmax, but this would not improve accuracy.
+
+\section{3-grams}
+
+We conducted many interesting tests mainly on 3-grams, due to being quite simple and not as resource consuming as others, especially because of our quite large data set - MNIST database consists of 60000 training images (ca. 6000 for each digit) and 10000 testing images. That gives us $2.16\cdot10^{11}$ different possible assignments of images to just one 3-digit sequence, linearly increasing with n-gram size (number of entries) and exponentially with $n$. Obviously, we used only subset of those (sampled randomly), but this creates an issue. If, for example, we've created a data set of 50000 3-digit sequences using (which is already 2.5 as much data as MNIST data set) by random choice with replacement of digits, every digit shall occur roughly 15000 times (for some of them this number might be significantly smaller). Given that we have 6000 images of this number and we sample 15000 of them with replacement, we will use only 5500 of them (as on average 500 samples will not be chosen). If there would be a digit occurring 10000 times only, then it would use only $\sim81\%$ of all its images available.
+
+\subsection{Simple 3-gram}
+
+Training data set $\mathcal{D}$ contained 40000 3-digit sequences, from which 36000 were $(0, 1, 2)$, and 4000 were $(1, 2, 3)$ giving 9:1 ratio noted in n-gram: $p(0,1,2)=0.9$, $p(1, 2, 3)=0.1$ and $p(\overline{i})=0$ otherwise.
+
+\begin{figure}[h]
+\begin{subfigure}[b]{.49\textwidth}
+    \def\svgwidth{\textwidth}
+    \input{images/t311_test_error.pdf_tex}
+    \caption{Error rate on test set.}
+    \label{fig:t311_test_error}
+\end{subfigure}
+\begin{subfigure}[b]{.49\textwidth}
+    \def\svgwidth{\textwidth}
+    \input{images/t311_train_error.pdf_tex}
+    \caption{Error rate on data set (input sequences).}
+    \label{fig:t311_data_error}
+\end{subfigure}
+\caption{Error rate on test and data set for test case 3.1.1.}
+\end{figure}
+
+As we can see on figure \ref{fig:t311_test_error}, test set errors for 0, 1 and 2 reach decent errors almost immediately, while the number 3 requires about $100$ epochs to achieve test error below $10\%$. To answer the question why this happens, let's differentiate loss function by $\theta$:
+
+\newcommand{\sumxsinB}{\sum_{(x1, x2, x3)\in \mathcal{B}}}
+\begin{align}
+    \frac{\partial\mathcal{L}}{\partial \theta}(\theta, V) &= \frac{\partial}{\partial \theta} \left(p(0, 1, 2) \cdot v_{(0, 1, 2)} \cdot \bpmean(0, 1, 2) + p(1, 2, 3)\cdot v_{(1, 2, 3)} \cdot \bpmean(1, 2, 3)\right) \\
+    &= \frac{9}{10} \cdot v_{(0, 1, 2)} \cdot \frac{\partial \bpmean}{\partial \theta}(0, 1, 2) + \frac{1}{10}\cdot v_{(1, 2, 3)} \cdot \frac{\partial \bpmean}{\partial \theta}(1, 2, 3)
+\end{align}
+
+Because $v_i < 0$, minimizing loss means maximizing posterior probabilities $\bpmean(0,1,2)$ and $\bpmean(1,2,3)$ with respect to $\theta$ with weights $\frac{9}{10} \cdot v_{(0, 1, 2)}$ and $\frac{1}{10}\cdot v_{(1, 2, 3)}$ respectively. Given that $\frac{9}{10} \cdot v_{(0, 1, 2)} > \frac{1}{10}\cdot v_{(1, 2, 3)}$ (which happens $94\%$\footnote{Let's say that $X, Y \sim \mathcal{U}(0,1)$. Then $P\left(\frac{9}{10}X > \frac{1}{10}Y\right) = P\left(9X > Y\right) = \frac{8}{9}P\left(9X > Y | X > \frac{1}{9}\right) + \frac{1}{9}P\left(9X > Y | X \le \frac{1}{9}\right) = \frac{8}{9} + \frac{1}{9}\cdot\frac{1}{2} = 0,9444\dots$}
+of the time if we sample dual variables from uniform distribution from interval $(-1, 0)$), our model will aim towards predicting sequence $(0,1,2)$ every time. We can see that on figure \ref{fig:t311_data_error}, at first error rate on data set for $3$ is equal $100\%$, which confirms our assumptions. 
+
+What would happen, if our model would start learning less frequent sequence from the beginning? We have conducted a similar tests but with $p(0,1,2)=60\%$ and $p(1,2,3)=40\%$. Here probability of swapping distributions at the beginning was $33\%$\footnote{As previously, $P(\frac{3}{5}X>\frac{2}{5}Y) = P(X>\frac{2}{3}) + P(\frac{3}{2}X>Y|X\le\frac{2}{3})=\frac{1}{3} + \frac{1}{2}\cdot\frac{2}{3} = \frac{2}{3}$.} When model learns correctly, it learns quicker and better than its $9:1$ counterpart - e.g. at Figure \ref{fig:t311_t322_test_error_comp}. Model reaches lower minimum highest and minimum mean error, at levels 3.20\% compared to 5.33\% and 1.81\% to 2.60\%, respectively.
+
+\begin{figure}[h]
+\begin{subfigure}[b]{.49\textwidth}
+    \def\svgwidth{\textwidth}
+    \input{images/t311_test_error.pdf_tex}
+    \caption{Error rate on test set (test case 3.1.1).}
+    \label{fig:t311_test_error_comp}
+\end{subfigure}
+\begin{subfigure}[b]{.49\textwidth}
+    \def\svgwidth{\textwidth}
+    \input{images/t322_test_error.pdf_tex}
+    \caption{Error rate on test set (test case 3.2.2).}
+    \label{fig:t322_test_error_comp}
+\end{subfigure}
+\caption{Comparison between test errors for test cases 3.1.1. and 3.2.2}
+\label{fig:t311_t322_test_error_comp}
+\end{figure}
+
+But when model starts learning less frequent sequence first, it will most likely try to predict that sequence $(0, 1, 2)$ (which is 1.5 times more frequent than $(1, 2, 3)$) is actually $(1, 2, 3)$. We experienced such result during test case 3.4.2 (figure \ref{fig:t342_results}). Let us note from diagram \ref{fig:t342_predictions_012} that indeed from the very beginning almost every sequence $(0,1,2)$ was classified as $(1, 2, 3)$, resulting in model classifying $(1, 2, 3)$ as $(2, 3, x)$, where $x \in \lbrace0, 1, 2, 3\rbrace$ - which figure \ref{fig:t342_predictions_123} confirms. 
+
+\begin{figure}[ht]
+\begin{subfigure}[b]{.49\textwidth}
+    \def\svgwidth{\textwidth}
+    \input{images/t342_train_error.pdf_tex}
+    \caption{Error rate on train set.}
+    \label{fig:t342_data_error}
+\end{subfigure}
+\begin{subfigure}[b]{.49\textwidth}
+    \def\svgwidth{\textwidth}
+    \input{images/t342_test_error.pdf_tex}
+    \caption{Error rate on test set.}
+    \label{fig:t342_test_error}
+\end{subfigure}
+\begin{subfigure}[b]{.49\textwidth}
+    \def\svgwidth{\textwidth}
+    \input{images/t342_predictions_train_012.pdf_tex}
+    \caption{How is every (0,1,2)-sequence classified by model. Output sequences shown only if they occurred a total
+    of at least $12000$ times across all epochs.}
+    \label{fig:t342_predictions_012}
+\end{subfigure}
+\begin{subfigure}[b]{.49\textwidth}
+    \def\svgwidth{\textwidth}
+    \input{images/t342_predictions_train_123.pdf_tex}
+    \caption{How is every (1,2,3)-sequence classified by model. Output sequences shown only if they occurred a total
+    of at least $10000$ times across all epochs.}
+    \label{fig:t342_predictions_123}
+\end{subfigure}
+\caption{Results from test case 3.2.4.}
+\label{fig:t342_results}
+\end{figure}
+
+\paragraph{Interesting fact.} On figure \ref{fig:t342_predictions_123} we can see that no $(1, 2, 3)$ was classified as $(2, 3, 0)$ almost ever (it was predicted a total of 113 times, only during first 10 epochs and never again - whereas $(2, 3, 1)$ was predicted a total of a little over 700.000 times). In fact, model quite quickly completely 'forgot' to predict zeroes, as it was unable to classify anything as $(0, 1, 2)$ due to the fact that every sequence seen by model was either $(1, 2, 3)$ or started with $(2, 3, \dots)$, giving no mapping to $(0, 1, 2)$ possible - which resulted in zeroes being redundant.
+
+% TODO: t3-1-5 -> zastąpić wykresy, loss na teście, destylacja modelu
+
+
+\subsection{Cyclic 3-grams}
+
+For test cases 3.5.x we generated data set $\mathcal{D}$ containing 40000 3-digit sequences with digits 0 - 4. Data set was generated using $n$-gram as described in Table \ref{tab:cyclic_test}.
+
+\begin{table}[htbp]
+\centering
+\begin{tabular}{c|c}
+    Sequence & Frequency \\
+    \hline
+    (0, 1, 2) & 20\% \\
+    (1, 2, 3) & 20\% \\
+    (2, 3, 4) & 20\% \\
+    (3, 4, 0) & 20\% \\
+    (4, 0, 1) & 20\% \\
+\end{tabular}
+\caption{}
+\label{tab:cyclic_test}
+\end{table}
+
+In 4 out of 5 of runs, errors approached 100\% quickly and maintained such for duration of training. When evaluated, model has shown that for each digit it predicts mainly one, different digit (both on data and test). The assignment of actual digit to predicted by model was, in every case, some cyclic permutation of sequence (0, 1, 2, 3, 4). If we counted posterior frequencies of sequences, it would be exactly matching input distribution (Table \ref{tab:cyclic_test}), and regarding that our model does not know that it "swapped" some digits it will never recover from this situation. From its perspective it matched distributions perfectly, as it reached global optimum of loss function, whereas from ours sight of view the results were completely incorrect.
+
+In one run model successfully learnt to recognize letters, with minimum mean error $2.09\%$ and minimum greatest error $2.77\%$.
+
+% \subsection{Cyclic 3-gram with broken symmetry}
+
+% TODO: wersja działająca ze złamaną symetrią
+
+
+\section{Real life examples}
+\labe{section:real_life}
+
+We wanted to test our model also on more lifelike examples, specifically English language. We decided to use Brown Corpus \citep{francis1964brown} from Natural Language Toolkit for Python \citep{loper2002nltk}, which is a data set of English text consisting of 1.100.000 words. From those we produced a sequence of 4.750.000 characters. We filtered $C$ most commonly occurring and mapped them to digits $0, 1, \dots C-1$, giving us sequence of digits, which n-gram distribution simulates distribution of (some) letters in English language. As sequence produced consisted of at least 1.5 million up to 3.5 million characters (depending on $C=3,4\dots10$ - number of filtered characters), we decided to use fraction of it as train set (in below tests it was first 100000 characters) and some other fraction
+as test set (in tests - letters 100000--110000). Because of significant increase 
+
+\paragraph{N-gram choice.} Due to selecting only a fraction of Brown Corpus, we were to decide how to generate n-gram probabilities. We could have used whole Brown Corpus and evaluate its n-gram, or generate n-gram probability distribution only on chosen subset of data. First approach would be more accurate with real life example, as when we learn sequence classifier on unlabeled data (some English text) we would not have access to this data's n-gram probabilities - we would have had only English n-gram available. Second approach is also valuable - it shows maximum abilities of SPDG algorithm (when it has access to perfect distribution).
+
+\subsection{N-gram generated from entire data set}
+
+Below results come from test cases BS3.3.1, BS3.4.1 and BS3.5.1 where we fed model with 3-gram evaluated on whole Brown Corpus generated sequence of digits, while during training we mapped only first 100000 characters to MNIST digits. Each test case was working with different number of digits: 3, 4 and 5 respectively ($C=3, 4, 5$). We did not manage to teach neural net with higher dimension of output ($C > 5$).
+
+Table \ref{tab:tbs3(345)1_stats} below shows more accurate statistics about train set for each test case. During training model has had access to whole MNIST train set of every digit, as there are $\sim6000$ images of every, while the least we used were fives in test case BS3.5.1, which was 15.9\% of 100000-digit sequence - that gives 15900 images used, still more than 2.5 times as much as available images (hence some were repeated).
+
+\begin{table}[htbp]
+\centering
+\begin{tabular}{c|c|c|c|c|c|c|}
+    \multicolumn{2}{c}{} & \multicolumn{5}{|c|}{Distribution (\%)} \\
+    \cline{3-7}
+    Test case & \% of available sequence & 0 & 1 & 2 & 3 & 4 \\
+    \hline
+    BS3.3.1 & 7.07 & 41.4 & 30.3 & 28.2 & - & - \\
+    BS3.4.1 & 5.63 & 33.1 & 24.2 & 22.6 & 20.1 & - \\
+    BS3.5.1 & 4.71 & 27.8 & 20.4 & 19.0 & 16.9 & 15.9 \\
+\end{tabular}
+\caption{}
+\label{tab:tbs3(345)1_stats}
+\end{table}
 
 
 
-\chapter{Output Distribution Match}
+\begin{figure}[ht]
+\begin{subfigure}[b]{.49\textwidth}
+    \def\svgwidth{\textwidth}
+    \input{images/tbs331_test_error.pdf_tex}
+    \caption{Error rate on test set during test case BS3.3.1. ($C=3$)}
+    \label{fig:tbs331_test_error}
+\end{subfigure}
+\begin{subfigure}[b]{.49\textwidth}
+    \def\svgwidth{\textwidth}
+    \input{images/tbs341_test_error.pdf_tex}
+    \caption{Error rate on test set during test case BS3.4.1. ($C=4$)}
+    \label{fig:tbs341_test_error}
+\end{subfigure}
+\begin{subfigure}[b]{.49\textwidth}
+    \def\svgwidth{\textwidth}
+    \input{images/tbs351_test_error.pdf_tex}
+    \caption{Error rate on test set during test case BS3.5.1. ($C=5$)}
+    \label{fig:tbs351_test_error}
+\end{subfigure}
+\begin{subfigure}[b]{.49\textwidth}
+    \def\svgwidth{\textwidth}
+    \input{images/tbs3(345)1_mean_test_error.pdf_tex}
+    \caption{Comparison of mean error rates of previous tests.}
+    \label{fig:tbs3(345)1_mean_test_error}
+\end{subfigure}
+\caption{Results of using SPDG algorithm to predict sequences of MNIST images mapped on Brown Corpus. Here n-grams 
+used were generated using whole Corpus, but data used in training was only a subsequence of whole Corpus.}
+\label{fig:tbs1_results}
+\end{figure}
 
-%%%%% BIBLIOGRAFIA
+On Figure \ref{fig:tbs1_results} we see results of 3 tests on Brown Corpus based MNIST sequences:
+\begin{enumerate}
+\item test case BS3.3.1 (Figure \ref{fig:tbs331_test_error}): results were replicable and net usually achieved minimum mean tes error on level $\sim6\%$ after 40-80 epochs and then balanced around $6-8\%$. Error was diversified - for zeroes and ones it was below $5\%$, while twos never achieved error rate lower than $10\%$ in any run.
+\item test case BS3.4.1 (Figure \ref{fig:tbs341_test_error}): here model was more dependant on initialization. During testing it learnt to below $20\%$ average error roughly $50\%$ of the time (2 out of 4 trials), while other $50\%$ it stayed far above $50\%$ and only learnt to predict one letter. Here minimum mean error was at higher level of $8\%$ after 60-100 epochs, and then maintained below $12\%$.
+\item test case BS3.5.1 (Figure \ref{fig:tbs351_test_error}): during testing we managed to get a working example only once. Results of this run are shown on diagrams: lowest mean error was $\sim 10\%$ after 80 epochs and then stayed below $15\%$ for entire training.
+\end{enumerate}
 
-\begin{thebibliography}{1}
-\bibitem{main_paper} Yu Liu, Jianshu Chen, Li Deng. ``Unsupervised Sequence Classification using
-Sequential Output Statistics''
+Also worth noting are mean train errors for every test case: $3.6\%, 5.25\%$ and $6.2\%$ respectively, achieved after 50-100 epochs and remaining roughly constant during entire training. And why is that train error is interesting for us? This is because used unlabeled data during training, hence ability to label it with over $90\%$ accuracy might be very profitable for us. We could have, for example, created program that without any previous knowledge (except for maybe n-gram distributions of English language) would be able to recognize images of text, given that we get enough images to match n-gram distribution in some extent. Of course, we omit obvious problem of segmentation of data, but such algorithms already exist (e.g. Tesseract - \cite{kay2007tesseract}).
 
-\end{thebibliography}
+\subsection{N-gram generated from train set}
+
+\begin{figure}[ht]
+\begin{subfigure}[b]{.49\textwidth}
+    \def\svgwidth{\textwidth}
+    \input{images/tbs362_test_error.pdf_tex}
+    \caption{Error rate on test set during test case BS3.6.2. ($C=6$)}
+    \label{fig:tbs362_test_error}
+\end{subfigure}
+\begin{subfigure}[b]{.49\textwidth}
+    \def\svgwidth{\textwidth}
+    \input{images/tbs382_test_error.pdf_tex}
+    \caption{Error rate on test set during test case BS3.8.2. ($C=8$)}
+    \label{fig:tbs382_test_error}
+\end{subfigure}
+\caption{Results of SPDG algorithm on MNIST images mapped on Brown Corpus, but with access to exact train data n-gram distribution.}
+\label{fig:tbs2_results}
+\end{figure}
+
+To test limits of SPDG algorithm on Brown Corpus, we decided to give model access to the most accurate n-gram possible - the one generated directly from train set. It increased model's consistency - tests with $C=3,4,5$ were not as often crashing, and a bit more accurate (usually 1-2 percentage points on mean error - test cases BS$3.x.2$). We even managed to train sequence classifier with $C=6$ and $C=8$ up to reasonable accuracy - model with $C=6$ (test case BS3.6.2 - Figure \ref{fig:tbs362_test_error}) achieved minimum mean error at $8.25\%$ (almost 2 percentage points better than test case BS3.5.1 with $C=5$, but with less accurate 3-gram), while model with $C=8$ learnt to predict 7 out of 8 letters with errors below $30\%$ (test case BS3.8.2 - Figure \ref{fig:tbs382_test_error}.
+
+\chapter{Conclusions}
+
+Above tests show that contrary to what was written in \cite{liu2017unsupervised}, we managed to train non-linear classifier (here neural net with 2 hidden layers) with SPDG algorithm on unlabeled data. Even though we did not fully simulate classification of sequences of English text (we only managed to classify 5-7 letters successfully), we have shown other properties and ability to train complex classifiers. Although MNIST might seem simple data set, it is actually quite difficult to reduce test errors below $7\%$, which we achieved (and linear classifiers did not - \cite{mnist}) - and we complexified prediction problem through removing access to labels, but having only (expected) output sequence probability distributions.
+
+Furthermore, most of our models have shown that test and train error rates were very similar, proving that our model generalized quite well and did not overfit too much (especially during real life training tests). With the fact that some MNIST images are extremely similar yet with different labels (some might be even mistaken by unwary human - this is because they were written by many different people, every one having his own writing style) or diversify though being the same digit, it gives us hope that when applied to images of text written by one person or maybe printed, SPDG algorithm will achieve even better results.
+
+\bibliographystyle{plainnat}
+\bibliography{lic}
 
 \end{document}
