@@ -15,7 +15,7 @@
 % polecenia \fmlinebreak.
 
 \polishtitle    {Nienadzorowane uczenie przez dopasowywanie\fmlinebreak rozkładów prawdopodobieństw}
-\englishtitle   {Unsupervised learning using output distribution match}
+\englishtitle   {Unsupervised learning using output distribution matching}
 \polishabstract {W nieniejszej pracy sprawdzamy hipotezę, czy można nauczyć sieć neuronową rozpoznawać tekst bez korzystania z podpisanych próbek tekstu, a jedynie z rokładów prawdopodobieństw wystąpienia pewnych sekwencji liter (n-gramów) w danych uczących. Implementujemy rozwiązanie zaproponowane przez  Yu Liu, Jianshu Chen oraz Li  Deng  w pracy  “Unsupervised  Sequence Classification using Sequential Output Statistics” oraz testujemy je na zbiorze danych MNIST, który jest zbiorem danych o dużo mniejszej regularności niż zbiór danych używany przez w cytowanej pracy. Wkładamy również wysiłek w próbę zrozumienia zasad działania algorytmu przez wiele różnych przypadków testowych (innych od przedstawionych w cytowanej pracy) oraz przez użycie bardziej skomplikowanego modelu sieci neuronowej.
 }
 
@@ -56,9 +56,9 @@ Most machine learning models have two main requirements: a well designed model a
 
 \section{Problem formulation}
 
-we consider the problem of learning optical character recognizer using data consisting of unlabeled sequences of data and the desired output statistics. In language processing obtaining such data set is considerably simpler that labeled data, as it is enough to get images of written text in specific language and for output statistics use easily obtainable n-grams of this language. Specifically: our classifier predicts sequences \( (y_1, \dots y_n) \) (labels) from input sequences \( (x_1, \dots x_n) \). The  algorithm we are going to implement will have access to:
+We consider the problem of learning an optical character recognizer using data consisting of unlabeled sequences of data and the desired output statistics. In language processing obtaining such data set is considerably simpler that labeled data, as it is enough to get images of written text in specific language and for output statistics use easily obtainable n-grams of this language. Specifically: our classifier predicts sequences \( (y_1, \dots y_n) \) (labels) from input sequences \( (x_1, \dots x_n) \). The  algorithm we are going to implement will have access to:
 \begin{enumerate}
-    \item  data set \( \mathcal{D} = \lbrace (x_1^k, \dots x_n^k) : k = 1, \dots M \rbrace \) of sequences,
+    \item a data set \( \mathcal{D} = \lbrace (x_1^k, \dots x_n^k) : k = 1, \dots M \rbrace \) of sequences,
     \item n-gram probabilities of such data - which are denoted as: 
 \[ p(i_1, \dots i_n) = p(y_1^k = i_1, \dots y_n^k = i_n) \]
 where \( i_1, \dots i_n \in \lbrace 0, 1, \dots C \rbrace \) and \( y_j^k \) is the label of letter \( x_j^k \).
@@ -287,7 +287,7 @@ What would happen, if our model would start learning less frequent sequence from
 \label{fig:t342_results}
 \end{figure}
 
-But when the model by starts learning the less frequent sequence first, it will most likely try to predict that sequence $(0, 1, 2)$ (which is 1.5 times more frequent than $(1, 2, 3)$) is actually $(1, 2, 3)$. We experienced such result during one test case which results are shown in Figure \ref{fig:t342_results} (GH t3.4.2). Let us note from diagram \ref{fig:t342_predictions_012} that indeed from the very beginning almost every sequence $(0,1,2)$ was classified as $(1, 2, 3)$, resulting in model classifying $(1, 2, 3)$ as $(2, 3, x)$, where $x \in \lbrace0, 1, 2, 3\rbrace$ - which figure \ref{fig:t342_predictions_123} confirms. 
+But when the model starts by learning the less frequent sequence first, it will most likely try to predict that sequence $(0, 1, 2)$ (which is 1.5 times more frequent than $(1, 2, 3)$) is actually $(1, 2, 3)$. We experienced such result during one test case which results are shown in Figure \ref{fig:t342_results} (GH t3.4.2). Let us note from diagram \ref{fig:t342_predictions_012} that indeed from the very beginning almost every sequence $(0,1,2)$ was classified as $(1, 2, 3)$, resulting in model classifying $(1, 2, 3)$ as $(2, 3, x)$, where $x \in \lbrace0, 1, 2, 3\rbrace$ - which figure \ref{fig:t342_predictions_123} confirms. 
 
 \paragraph{Overfitting} In figures \ref{fig:t311_test_error_comp}, \ref{fig:t322_test_error_comp} and \ref{fig:t311_test_error} we can notice that after roughly 700 epochs test errors for 1 and 2 significantly increase. As error on train set is constantly very low, such results are caused by model overfitting to train data set. Should it concern us? Actually, not as much as in other machine learning problems. For us here, test error is only a determinant of regularization of our model. Very valuable is our ability to label the train set almost perfectly, which we could have then used for supervised learning.
 
@@ -414,7 +414,7 @@ Table \ref{tab:tbs3(345)1_stats} below shows more accurate statistics about trai
 
 In Figure \ref{fig:tbs1_results} we see results of 3 tests on Brown Corpus based MNIST sequences:
 \begin{enumerate}
-\item $C=3$ case (GH tbs3.3.1, Figure \ref{fig:tbs331_test_error}): results were replicable and net usually achieved minimum mean tes error on level $\sim6\%$ after 40-80 epochs and then balanced around $6-8\%$. Error was diversified - for zeroes and ones it was below $5\%$, while twos never achieved error rate lower than $10\%$ in any run.
+\item $C=3$ case (GH tbs3.3.1, Figure \ref{fig:tbs331_test_error}): results were replicable and net usually achieved minimum mean test error on level $\sim6\%$ after 40-80 epochs and then balanced around $6-8\%$. Error was diversified - for zeroes and ones it was below $5\%$, while twos never achieved error rate lower than $10\%$ in any run.
 \item $C=4$ case (GH tbs3.4.1, Figure \ref{fig:tbs341_test_error}): here model was more dependant on initialization. During testing it learnt to below $20\%$ average error roughly $50\%$ of the time (2 out of 4 trials), while other $50\%$ it stayed far above $50\%$ and only learnt to predict one letter. Here minimum mean error was at higher level of $8\%$ after 60-100 epochs, and then maintained below $12\%$.
 \item $C=5$ case (GH tbs3.5.1, Figure \ref{fig:tbs351_test_error}): during testing we managed to get a working example only once. Results of this run are shown on diagrams: lowest mean error was $\sim 10\%$ after 80 epochs and then stayed below $15\%$ for entire training.
 \end{enumerate}

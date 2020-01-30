@@ -1,3 +1,0 @@
-DEVICE = 'cuda'
-BATCH_SIZE = 1024
-MNIST_LOC = './../../MNIST'
