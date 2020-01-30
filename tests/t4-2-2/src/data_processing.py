@@ -1,19 +1,20 @@
 import os
+import pickle
 import sys
 import warnings
-import pickle
 from time import gmtime, strftime
 
-import torch
 import numpy as np
+import torch
 from torchvision import datasets, transforms
-from src.ngram import Ngram
+
 from config import BATCH_SIZE, MNIST_LOC
+from src.ngram import Ngram
 
 
 def categorical(probs, num_samples=1):
     """Sample indices of probs with specified probabilities."""
-    return np.asarray([probs.sample(np.random.rand()) for _ in range(num_samples)])
+    return np.asarray([probs.norm().sample(np.random.rand()) for _ in range(num_samples)])
 
 
 def dump_data_to_local(content, fname=None):
@@ -31,11 +32,11 @@ def read_data_from_local(fname):
 
 class SequentialMNIST(torch.utils.data.Dataset):
     """Create dataset containing sequences of MNIST digits based on given ngram probabilities"""
-    def __init__(self, ngram, num_samples, sequence_length=None):
+    def __init__(self, ngram, num_samples, sequence_length=None, train=True):
         if sequence_length is not None:
             warnings.warn("Variable sequence_length is unused. Sequence generated have \
                 length equal to n (from ngram)")
-        data = datasets.MNIST(MNIST_LOC, train=True, download=True)
+        data = datasets.MNIST(MNIST_LOC, train=train, download=True)
         split_data = dict()
         for i in range(10):
             split_data[i] = data.data.numpy()[data.targets.numpy() == i]
@@ -43,11 +44,14 @@ class SequentialMNIST(torch.utils.data.Dataset):
         self.targets = categorical(ngram, num_samples).astype('int64')
         self.transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,)), ])
         for i in range(num_samples):
+            if i % 97 == 0:
+                sys.stdout.write("\rGenerating sample " + str(i+1) + "...")
             for j in range(10):
                 if (self.targets[i, ...] == j).any():
                     pos = np.random.randint(len(split_data[j]), size=(self.targets[i, ...] == j).sum())
                     self.data[i, (self.targets[i, ...] == j).nonzero()[0], ...] = \
                         split_data[j][pos]
+        sys.stdout.write('\rDone!                                                                        \n')
 
     def __len__(self):
         return len(self.data)
@@ -59,8 +63,8 @@ class SequentialMNIST(torch.utils.data.Dataset):
         return res, self.targets[index]
 
 
-def sequence_loader_MNIST(ngram, num_samples):
-    data = SequentialMNIST(ngram, num_samples)
+def sequence_loader_MNIST(ngram, num_samples, train=True):
+    data = SequentialMNIST(ngram, num_samples, train=train)
     return torch.utils.data.DataLoader(data, batch_size=BATCH_SIZE, shuffle=True)
 
 
@@ -111,12 +115,24 @@ def create_ngram(sentences, n):
     return ngram.norm()
 
 
-def randomized_ngram(n, entries, out_dim=10):
+def randomized_ngram(n, size, out_dim=10, min_var=1e-6):
     """Create randomized n-gram"""
     ngram = Ngram(n)
-    while ngram.size() < entries:
+    while ngram.size() < size:
         ngram[tuple(np.random.randint(0, out_dim, n))] = np.random.random()
-    return ngram.norm()
+    unique = set()
+    for idx in ngram:
+        for i in idx:
+            unique.add(i)
+    if len(unique) != out_dim:
+        return randomized_ngram(n, size, out_dim, min_var)
+    ngram.norm()
+    mu = sum(ngram.values()) / size
+    var = sum([(x - mu) ** 2 for x in ngram.values()]) / size
+    if var < min_var:
+        return randomized_ngram(n, size, out_dim, min_var)
+    print(f"Ngram variance: {var}")
+    return ngram
 
 
 def sequence_ngram(n, entries, out_dim=10):
